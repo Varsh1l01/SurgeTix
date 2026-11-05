@@ -1,0 +1,35 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Go
+*.exe
+*.test
+coverage.out
+
+# Node
+node_modules/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker and generated data
+postgres-data/
+redis-data/
+kafka-data/
+
+# Secrets
+*.pem
+*.key
+secrets/
