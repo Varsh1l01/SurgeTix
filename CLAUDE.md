@@ -12,15 +12,18 @@ Read this before doing anything in the repository. The sections marked **Permane
 
 ---
 
-## Current phase — Phase 0 (documentation), awaiting approval
+## Current phase — Phase 1 (Foundations), awaiting review
 
-Until the owner records approval in `PROGRESS.md`:
+Phase 0 was approved on 2026-11-06. Phase 1 is implemented. Its gate (**CI green**) is pending the first GitHub Actions run.
 
-1. **No application code**: no Go, protos, SQL migrations, k6 scripts, React, Dockerfiles, Compose or Kubernetes files.
-2. **No service directories** or scaffolding.
-3. **No build phase may start.**
+Until the owner approves Phase 1 in `PROGRESS.md`:
+1. **No business logic**: no holds, queue, admission, payments, sagas, transfers, scanning, frontend or Kubernetes.
+2. **No tables** beyond what Compose already creates (databases and roles only). The schema starts in phase 3 with `goose`.
+3. **No Kafka topics**: names are open (AMB-03), and topics come with the outbox relay in phase 4.
 
-Before phase 1 can start, these must be decided: **OQ-3 / AMB-36** (data-access tooling), **AMB-34** (repo layout), **AMB-20** (Redis topology). Before phase 2: **OQ-7** (baseline shape). See [`ARCHITECTURE_REVIEW.md`](ARCHITECTURE_REVIEW.md) §2.
+Before phase 2: decide **OQ-7** (baseline shape). Before phase 3: **OQ-3 / AMB-36** (sqlc), **AMB-10**, **AMB-09**.
+
+**Code layout (ADR-033):** `cmd/<service>/main.go` declares only that service's dependencies via `app.Main`. Shared infrastructure lives in `internal/platform/`. Business code goes in `internal/<service>/`, which must never import another service's package. Each service reads only its own `<SERVICE>_DATABASE_URL`.
 
 ---
 

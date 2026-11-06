@@ -4,7 +4,7 @@
 
 SurgeTix sells seats for one event to millions of simultaneous buyers. It **never sells a seat twice**, and it keeps the buying path fast by **letting in only as many users as the system can serve**. It is a portfolio-grade implementation in Go. Payments are simulated by **FakePay**, and no real money moves.
 
-> **Status:** 📄 **Documentation phase (phase 0).** No application code exists yet. The engineering documentation is complete and **awaiting owner approval**. See [PROGRESS.md](PROGRESS.md).
+> **Status:** 🔵 **Phase 1 — Foundations**, implemented and awaiting review. There are service skeletons, local infrastructure and CI, but **no business logic yet**. See [PROGRESS.md](PROGRESS.md).
 
 ## Why
 
@@ -49,23 +49,29 @@ All targets are proven by the same k6 scenarios run against a **naive baseline**
 
 Go 1.27 · PostgreSQL 17 · Redis 7 · Kafka (KRaft) · gRPC/Protobuf · REST + SSE · NGINX · React + TypeScript · Prometheus/Grafana/OpenTelemetry/Tempo · k6 · Docker Compose · Kubernetes (kind/k3d) · GitHub Actions. Details and rejected alternatives: [technology-choices](docs/02-architecture/technology-choices.md).
 
-## Repository layout (current)
+## Repository layout
 
 ```
 SurgeTix/
-├── CLAUDE.md                    working rules and invariants
-├── README.md                    this file (will also hold the load-test report)
-├── PROGRESS.md                  phase status
-├── ARCHITECTURE_DECISIONS.md    ADR-001…032
-├── ARCHITECTURE_REVIEW.md       decisions needing approval, PDF inconsistencies, risks
-├── TASKS.md                     backlog by phase and gate
-├── DOCUMENTATION_AUDIT.md       validation of the doc set
-├── .gitignore
+├── cmd/                         one binary per service (ADR-021, ADR-033)
+│   ├── gateway/  identity/  catalog/  waitingroom/
+│   └── booking/  checkout/  notifier/
+├── internal/platform/           shared infrastructure only, no business code
+│   ├── app/       common entry point: config → logger → deps → serve → shutdown
+│   ├── config/    environment variables (+ optional local .env)
+│   ├── logging/   slog JSON logger
+│   ├── service/   /healthz, /readyz, graceful shutdown
+│   ├── postgres/  pgx pool for the service's own database
+│   ├── redisx/    go-redis client
+│   └── kafka/     franz-go client (acks=all)
+├── deploy/compose/postgres-init/   creates one database + role per owning service
+├── compose.yaml                 PostgreSQL 17, Redis 7, Kafka 4 (KRaft)
+├── .env.example                 local settings template (copy to .env)
+├── .github/workflows/ci.yml     gofmt, vet, race tests, build, integration, compose
+├── docs/                        engineering documentation (index: docs/README.md)
 ├── reference/                   source PDF (single source of truth)
-└── docs/                        engineering documentation (index: docs/README.md)
+└── CLAUDE.md · PROGRESS.md · TASKS.md · ARCHITECTURE_DECISIONS.md · ARCHITECTURE_REVIEW.md · DOCUMENTATION_AUDIT.md
 ```
-
-The code layout is **not yet decided** ([AMB-34](docs/10-planning/ambiguities.md#amb-34)).
 
 ## Documentation map
 
@@ -85,9 +91,109 @@ The code layout is **not yet decided** ([AMB-34](docs/10-planning/ambiguities.md
 
 **Start the review at [ARCHITECTURE_REVIEW.md](ARCHITECTURE_REVIEW.md).** It lists every decision awaiting approval, in build order.
 
-## Running it
+## Local development
 
-Not applicable yet. When built, the PDF requires a **one-command local run via Docker Compose** ([deployment-and-operability](docs/08-operations/deployment-and-operability.md)).
+### Prerequisites
+
+| Tool | Version | Check |
+|---|---|---|
+| Go | **1.27** (from `go.mod`) | `go version` |
+| Docker with Compose v2 | On Windows, Docker Desktop needs a working **WSL 2** backend | `docker compose version` |
+| Git | any recent version | `git --version` |
+
+### 1. Configure
+
+```sh
+cp .env.example .env        # PowerShell: Copy-Item .env.example .env
+```
+
+Replace every `change-me-…` value in `.env`. The password inside each `*_DATABASE_URL` must match the corresponding `*_DB_PASSWORD`. `.env` is git-ignored. Never commit it.
+
+### 2. Start the infrastructure
+
+```sh
+docker compose up -d --wait   # starts postgres, redis, kafka; returns when all are healthy
+docker compose ps             # STATUS should show (healthy) for all three
+```
+
+| Container | Image | Host port (127.0.0.1 only; non-default so a local Postgres or Redis cannot clash) | Purpose |
+|---|---|---|---|
+| postgres | `postgres:17.11` | 15432 | `identity_db`, `catalog_db`, `booking_db`, `checkout_db`, each owned by its own role |
+| redis | `redis:7.4.12` | 16379 | password-protected, AOF persistence |
+| kafka | `apache/kafka:4.4.0` | 29092 | single KRaft broker, topic auto-creation **off** |
+
+Data lives in the named volumes `postgres-data`, `redis-data` and `kafka-data`.
+
+### 3. Run a service
+
+Services run on the host and read `.env` from the repository root:
+
+```sh
+go run ./cmd/booking          # or gateway, identity, catalog, waitingroom, checkout, notifier
+curl localhost:18084/healthz   # liveness:  200 while the process runs
+curl localhost:18084/readyz    # readiness: 200 when its own dependencies answer, else 503 + per-check detail
+```
+
+| Service | Port | Dependencies checked by `/readyz` |
+|---|---|---|
+| gateway | 18080 | Redis |
+| identity | 18081 | Postgres (`identity_db`) |
+| catalog | 18082 | Postgres (`catalog_db`), Redis |
+| waitingroom | 18083 | Redis, Kafka |
+| booking | 18084 | Postgres (`booking_db`), Redis, Kafka |
+| checkout | 18085 | Postgres (`checkout_db`), Kafka |
+| notifier | 18086 | Kafka |
+
+Stop a service with `Ctrl+C`. It stops accepting traffic (`/readyz` → 503), waits up to `SHUTDOWN_TIMEOUT` for in-flight requests, then exits.
+
+### 4. Checks (the same as CI)
+
+```sh
+gofmt -l .                              # must print nothing
+go vet ./... && go vet -tags=integration ./...
+go test ./...                           # unit tests; CI adds -race (needs a 64-bit C compiler locally)
+go test -tags=integration ./...         # starts real containers via testcontainers-go; needs Docker
+go build -o bin/ ./cmd/...              # bin/ is git-ignored
+```
+
+### 5. Stop
+
+```sh
+docker compose down        # stop containers, keep data
+docker compose down -v     # also delete volumes (full reset; databases are re-created on next start)
+```
+
+### Environment variables
+
+Every variable, with a safe placeholder, is in [`.env.example`](.env.example).
+
+| Variable | Used by | Notes |
+|---|---|---|
+| `POSTGRES_USER`, `POSTGRES_PASSWORD` | postgres container | Admin account. Services never use it |
+| `IDENTITY_/CATALOG_/BOOKING_/CHECKOUT_DB_PASSWORD` | postgres init script | Per-service role passwords |
+| `<SERVICE>_DATABASE_URL` | identity, catalog, booking, checkout | Each service gets only its own DSN (ADR-008) |
+| `REDIS_ADDR`, `REDIS_PASSWORD` | redis container; gateway, catalog, waitingroom, booking | |
+| `KAFKA_BROKERS` | waitingroom, booking, checkout, notifier | Comma-separated |
+| `KAFKA_CLUSTER_ID` | kafka container | KRaft cluster ID. Not a secret |
+| `<SERVICE>_HTTP_ADDR` | each service | Listen address for the health endpoints |
+| `LOG_LEVEL`, `SHUTDOWN_TIMEOUT` | all services | `debug` / `info` / `warn` / `error`; a Go duration such as `10s` |
+
+### Troubleshooting
+
+| Symptom | Cause and fix |
+|---|---|
+| Compose: `required variable … is missing a value` | There is no `.env`, or a value in it is empty. Copy `.env.example` to `.env` |
+| Service: `invalid configuration … X is required`, exit code 1 | The service could not find a variable. Run it from the repo root (where `.env` is), or export the variable |
+| `/readyz` returns 503 with `connection refused` | The infrastructure isn't running. Check `docker compose ps`, then run `docker compose up -d --wait` |
+| Postgres `password authentication failed` or role missing after editing `.env` | Databases and roles are created **only the first time** an empty volume starts. Reset with `docker compose down -v`, then `docker compose up -d --wait` |
+| `permission denied for database …` (SQLSTATE 42501) | Working as designed: a service role can open only its own database. Check the database name in the DSN |
+| Port 15432 / 16379 / 29092 already in use | Another local server is running. Stop it, or change `POSTGRES_PORT` / `REDIS_PORT` / `KAFKA_PORT` (and the matching URLs) in `.env` |
+| Kafka unhealthy for the first ~30 s | The JVM is still starting. `--wait` allows for this; see `docker compose logs kafka` |
+| Kafka fails after `KAFKA_CLUSTER_ID` changes | The stored data belongs to the old ID. Run `docker compose down -v` |
+| Docker Desktop (Windows) quits on start; its log shows `Wsl/…/HCS/ERROR_NOT_SUPPORTED` | WSL 2 cannot create its VM. Run `wsl --update`, reboot, and check that *Virtual Machine Platform* is enabled. `wsl -d Ubuntu -e echo ok` must work before Docker can |
+| `go test -race` fails with `64-bit mode not compiled in` | Your C compiler is 32-bit. Install a 64-bit MinGW-w64 toolchain, or rely on CI, which runs `-race` on Linux |
+
+> **Verification status (Phase 1).** These steps were run and verified on the development machine: gofmt, vet, unit tests, building, running a service and querying its health endpoints, and `docker compose config`. Graceful shutdown is verified by a unit test (`service.TestServeShutsDownGracefully`), not by a manual Ctrl+C. These could **not** be run there: `docker compose up`, the integration tests and the `-race` tests (WSL 2 failure; 32-bit C compiler). The CI jobs cover them, and they must pass on the first push before the Phase 1 gate is green. See [PROGRESS.md](PROGRESS.md).
 
 ## Load-test report
 

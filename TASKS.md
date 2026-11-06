@@ -20,7 +20,7 @@ Legend: ☐ to do · ☑ done · ⛔ blocked
 | P0-3 | Create `CLAUDE.md`, `README.md`, `PROGRESS.md`, `ARCHITECTURE_DECISIONS.md`, `TASKS.md` | ☑ |
 | P0-4 | Validate links, anchors, citations and coverage; write `DOCUMENTATION_AUDIT.md` | ☑ |
 | P0-4a | Final pre-commit review: Mermaid parse, DDL diff, entity cross-check, secrets/.gitignore check; create `ARCHITECTURE_REVIEW.md` | ☑ |
-| P0-5 | **Owner:** review the doc set | ☐ |
+| P0-5 | **Owner:** review the doc set | ☑ (approved 2026-11-06) |
 | P0-6 | **Owner:** decide the ambiguities in the [register](docs/10-planning/ambiguities.md), at least those blocking phases 1–3 (prioritised in [ARCHITECTURE_REVIEW.md](ARCHITECTURE_REVIEW.md) §2) | ☐ |
 | P0-7 | **Owner:** decide OQ-3 and OQ-7 | ☐ |
 | P0-8 | Propagate approved decisions into docs and ADRs; log them in PROGRESS | ☐ (after P0-5…7) |
@@ -34,12 +34,13 @@ Legend: ☐ to do · ☑ done · ⛔ blocked
 
 | ID | Task | Depends on |
 |---|---|---|
-| P1-1 | Decide and create the repository/module layout | ⛔ [AMB-34](docs/10-planning/ambiguities.md#amb-34) |
-| P1-2 | Service skeletons (empty binaries with health endpoints only) | P1-1 |
-| P1-3 | Docker Compose with PostgreSQL 17, Redis 7, Kafka (KRaft, 1 broker) | ⛔ [AMB-20](docs/10-planning/ambiguities.md#amb-20) (Redis topology) |
-| P1-4 | Migration tooling (`goose`) and data-access tooling (`pgx`/`sqlc`) wired | ⛔ [OQ-3](docs/10-planning/open-questions.md) / [AMB-36](docs/10-planning/ambiguities.md#amb-36) |
-| P1-5 | GitHub Actions CI: build, `go test -race`, lint, `buf` lint/breaking | P1-1 |
-| P1-6 | `testcontainers-go` harness for Postgres/Redis/Kafka integration tests | P1-3 |
+| P1-1 | Decide and create the repository/module layout | ☑ ADR-033 |
+| P1-2 | Service skeletons (empty binaries with health endpoints only) | ☑ 7 binaries, `/healthz` + `/readyz`, graceful shutdown |
+| P1-3 | Docker Compose with PostgreSQL 17, Redis 7, Kafka (KRaft, 1 broker) | ☑ written; `config` validated; **`up` not yet run** (local WSL failure, CI job pending). Single Redis node locally; the Kubernetes topology question ([AMB-20](docs/10-planning/ambiguities.md#amb-20)) stays open |
+| P1-4 | Migration tooling (`goose`) and data-access tooling (`pgx`/`sqlc`) wired | ◐ `pgx` pool wired. `goose` and `sqlc` **deferred to phase 3**: there is no schema or query in phase 1, so wiring them now would be empty. `sqlc` still needs [OQ-3](docs/10-planning/open-questions.md) / [AMB-36](docs/10-planning/ambiguities.md#amb-36) |
+| P1-5 | GitHub Actions CI: build, `go test -race`, lint, `buf` lint/breaking | ☑ gofmt, `go mod tidy` check, vet (both tags), `-race` tests, build, integration and compose jobs. **First run pending push.** `buf` deferred to phase 4 (no `.proto` files yet) |
+| P1-6 | `testcontainers-go` harness for Postgres/Redis/Kafka integration tests | ☑ written and compiled (`-tags=integration`); **not yet run** (needs Docker; runs in the CI `integration` job) |
+| P1-7 | **Owner:** push, confirm all three CI jobs green, review Phase 1 | ☐ |
 
 ---
 

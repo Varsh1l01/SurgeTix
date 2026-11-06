@@ -1,0 +1,83 @@
+# Phase 1 gate: "CI green" (PDF p.36).
+#
+#   checks       gofmt, go vet, unit tests with the race detector, build
+#   integration  real Postgres/Redis/Kafka through testcontainers-go (ADR-029)
+#   compose      the local Docker Compose stack starts and becomes healthy
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: gofmt
+        run: |
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "These files need gofmt:"; echo "$unformatted"; exit 1
+          fi
+
+      - name: go mod tidy is clean
+        run: |
+          go mod tidy
+          git diff --exit-code go.mod go.sum
+
+      - name: go vet
+        run: |
+          go vet ./...
+          go vet -tags=integration ./...
+
+      - name: unit tests (race)
+        run: go test -race -count=1 ./...
+
+      - name: build all services
+        run: go build -o bin/ ./cmd/...
+
+  integration:
+    needs: checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: integration tests (testcontainers)
+        run: go test -race -count=1 -tags=integration ./...
+
+  compose:
+    needs: checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: create .env from the example
+        run: cp .env.example .env
+      - name: validate compose file
+        run: docker compose config --quiet
+      - name: start infrastructure and wait for health
+        run: docker compose up -d --wait --wait-timeout 240
+      - name: show status
+        if: always()
+        run: docker compose ps
+      - name: logs on failure
+        if: failure()
+        run: docker compose logs --no-color
+      - name: tear down
+        if: always()
+        run: docker compose down -v

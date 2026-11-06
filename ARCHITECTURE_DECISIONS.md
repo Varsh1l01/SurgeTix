@@ -46,6 +46,7 @@ New decisions (e.g. answers to [ambiguities](docs/10-planning/ambiguities.md) or
 | [030](#adr-030) | Compose locally; kind/k3d with CloudNativePG, Strimzi, Redis Sentinel; GitHub Actions | Accepted (PDF) |
 | [031](#adr-031) | Canonical hold expiry on `holds`; seat expiry is a same-transaction mirror | Accepted (PDF) |
 | [032](#adr-032) | Money as integer paise | Accepted (PDF) |
+| [033](#adr-033) | Single-module Go monorepo; per-service Postgres roles | **Accepted (owner, 2026-11-06)** |
 
 ---
 
@@ -232,3 +233,15 @@ New decisions (e.g. answers to [ambiguities](docs/10-planning/ambiguities.md) or
 ## ADR-032 — Money as integer paise
 - **Status:** Accepted (PDF p.17–20)
 - **Decision:** All amounts are `BIGINT` paise with `CHECK` bounds (`amount_paise > 0`, `refunded_paise BETWEEN 0 AND amount_paise`). No floating-point money anywhere.
+
+<a id="adr-033"></a>
+## ADR-033 — Single-module Go monorepo; per-service Postgres roles
+- **Status:** Accepted (owner, 2026-11-06). Resolves [AMB-34](docs/10-planning/ambiguities.md#amb-34) (layout part)
+- **Context:** The PDF specifies the services but no repository structure. Phase 1 must create one.
+- **Decision:**
+  - One Go module, `github.com/Varsh1l01/SurgeTix`, Go 1.27.
+  - `cmd/<service>/main.go` for each of the 7 binaries (ADR-021).
+  - `internal/platform/` holds shared infrastructure only (config, logging, health/shutdown, Postgres/Redis/Kafka clients). Business code goes in `internal/<service>/`, added as each phase needs it.
+  - Each Postgres-owning service gets its own database **and its own login role**. The role owns only its database, and `PUBLIC` has no `CONNECT` on service databases. ADR-008 is therefore enforced by Postgres, not only by convention. Integration-tested in `internal/platform/postgres`.
+- **Alternatives rejected:** one module per service with `go.work` (more version and CI overhead, with no isolation gain that Go's `internal/` rule and the DB roles don't already give).
+- **Consequences:** One CI pipeline and one `go.mod`. Service boundaries are kept by package structure and DB roles; a later lint rule may forbid `internal/<a>` importing `internal/<b>`.

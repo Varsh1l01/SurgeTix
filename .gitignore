@@ -33,3 +33,19 @@ kafka-data/
 *.pem
 *.key
 secrets/
+
+# Go build output and profiles (keep *.pgo committed for PGO)
+bin/
+*.out
+*.prof
+*.pprof
+
+# Windows / OneDrive
+desktop.ini
+
+# Local cluster credentials
+kubeconfig
+*.kubeconfig
+
+# Personal assistant settings
+.claude/settings.local.json

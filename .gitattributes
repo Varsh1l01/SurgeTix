@@ -1,0 +1,13 @@
+# Keep LF in the working tree for files whose tools reject CRLF
+# (gofmt flags CRLF; /bin/sh in containers fails on CRLF scripts).
+*.go     text eol=lf
+go.mod   text eol=lf
+go.sum   text eol=lf
+*.sh     text eol=lf
+*.sql    text eol=lf
+*.yaml   text eol=lf
+*.yml    text eol=lf
+.env.example text eol=lf
+
+*.png    binary
+*.pdf    binary

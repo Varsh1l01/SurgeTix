@@ -32,7 +32,7 @@ The open items are concentrated in **lifecycle edges** (partial cancellation, se
 | 1 | **Documentation approval** | — | Phase 0 gate | Approve the `docs/` set as the engineering baseline |
 | 2 | [AMB-02](docs/10-planning/ambiguities.md#amb-02) | M | 0 | Approve the doc layout, FR → phase mapping, and how untested FRs/failures are covered |
 | 3 | [AMB-01](docs/10-planning/ambiguities.md#amb-01) | L | 0 (commit) | Keep the PDF file name `…(2).pdf` or rename it to a stable name before the first commit |
-| 4 | [AMB-34](docs/10-planning/ambiguities.md#amb-34) | M | **1** | Repository / Go module / proto layout |
+| 4 | [AMB-34](docs/10-planning/ambiguities.md#amb-34) | M | **1** | ✅ Decided 2026-11-06: single-module monorepo ([ADR-033](ARCHITECTURE_DECISIONS.md#adr-033)) |
 | 5 | [OQ-3](docs/10-planning/open-questions.md) / [AMB-36](docs/10-planning/ambiguities.md#amb-36) | L | **1** | Confirm `sqlc` for CRUD + hand-written `pgx` SQL on hot paths (ADR-024 Proposed) |
 | 6 | [AMB-20](docs/10-planning/ambiguities.md#amb-20) | M | **1** | Redis Sentinel (single primary) vs Cluster; HA expectations under Compose; kind vs k3d |
 | 7 | [OQ-7](docs/10-planning/open-questions.md) | — | **2** | Naive baseline as a monolith or as the same services without protections |
