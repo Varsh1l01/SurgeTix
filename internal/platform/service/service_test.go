@@ -117,3 +117,35 @@ func TestRunFailsOnBadAddress(t *testing.T) {
 		t.Fatal("expected listen error")
 	}
 }
+
+func TestOptionalRoutesAndMetrics(t *testing.T) {
+	status := func(h http.Handler, method, path string) int {
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest(method, path, nil))
+		return rec.Code
+	}
+
+	// Phase 1 shape: nothing but health endpoints.
+	plain := New(Options{Name: "svc", Logger: quietLogger()}).Handler()
+	if c := status(plain, http.MethodGet, "/metrics"); c != http.StatusNotFound {
+		t.Errorf("no Metrics: /metrics = %d, want 404", c)
+	}
+	if c := status(plain, http.MethodPost, "/v1/anything"); c != http.StatusNotFound {
+		t.Errorf("no Routes: /v1/anything = %d, want 404", c)
+	}
+
+	routes := http.NewServeMux()
+	routes.HandleFunc("POST /v1/thing", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusCreated) })
+	metrics := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusTeapot) })
+	h := New(Options{Name: "svc", Logger: quietLogger(), Routes: routes, Metrics: metrics}).Handler()
+
+	if c := status(h, http.MethodPost, "/v1/thing"); c != http.StatusCreated {
+		t.Errorf("route = %d, want 201", c)
+	}
+	if c := status(h, http.MethodGet, "/metrics"); c != http.StatusTeapot {
+		t.Errorf("metrics = %d, want the metrics handler", c)
+	}
+	if c, _ := get(t, h, "/healthz"); c != http.StatusOK {
+		t.Errorf("routes must not shadow /healthz: %d", c)
+	}
+}

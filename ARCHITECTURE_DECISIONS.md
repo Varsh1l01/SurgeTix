@@ -47,6 +47,8 @@ New decisions (e.g. answers to [ambiguities](docs/10-planning/ambiguities.md) or
 | [031](#adr-031) | Canonical hold expiry on `holds`; seat expiry is a same-transaction mirror | Accepted (PDF) |
 | [032](#adr-032) | Money as integer paise | Accepted (PDF) |
 | [033](#adr-033) | Single-module Go monorepo; per-service Postgres roles | **Accepted (owner, 2026-11-06)** |
+| [034](#adr-034) | Naive baseline: the same seven components without protections (OQ-7 → Option B) | **Accepted (owner, 2026-11-06)** |
+| [035](#adr-035) | Phase 2 baseline implementation decisions (AMB-38 … AMB-43) | **Accepted (owner, 2026-11-06)** |
 
 ---
 
@@ -176,7 +178,7 @@ New decisions (e.g. answers to [ambiguities](docs/10-planning/ambiguities.md) or
 ## ADR-022 — Naive baseline first; correctness before splitting
 - **Status:** Accepted (PDF p.36–37)
 - **Decision:** Phase 2 builds a check-then-book baseline (gate: oversell seen). Phase 3 proves the booking core (T1, T7, T8) **before** services are split (phase 4). A phase moves on only when its gate passes; the timeline stretches rather than skipping correctness work.
-- **Open:** baseline shape ([OQ-7](docs/10-planning/open-questions.md)).
+- **Baseline shape:** decided 2026-11-06 as the same seven components without protections ([ADR-034](#adr-034), resolves [OQ-7](docs/10-planning/open-questions.md)).
 
 <a id="adr-023"></a>
 ## ADR-023 — FakePay simulator
@@ -245,3 +247,40 @@ New decisions (e.g. answers to [ambiguities](docs/10-planning/ambiguities.md) or
   - Each Postgres-owning service gets its own database **and its own login role**. The role owns only its database, and `PUBLIC` has no `CONNECT` on service databases. ADR-008 is therefore enforced by Postgres, not only by convention. Integration-tested in `internal/platform/postgres`.
 - **Alternatives rejected:** one module per service with `go.work` (more version and CI overhead, with no isolation gain that Go's `internal/` rule and the DB roles don't already give).
 - **Consequences:** One CI pipeline and one `go.mod`. Service boundaries are kept by package structure and DB roles; a later lint rule may forbid `internal/<a>` importing `internal/<b>`.
+
+<a id="adr-034"></a>
+## ADR-034 — Naive baseline: the same seven components without protections
+- **Status:** Accepted (owner, 2026-11-06). Resolves [OQ-7](docs/10-planning/open-questions.md) with **Option B**. Refines [ADR-022](#adr-022).
+- **Context:** Phase 2 must build a check-then-book baseline whose gate is *oversell seen* (p.36). Every SurgeTix claim is measured against it under the same k6 profile (T6, p.34). OQ-7 asked whether it should be a monolith (simplest) or the same services without the waiting room and atomic holds (fairer comparison).
+- **Decision:**
+  - The baseline keeps the **seven components** of Phase 1 (Gateway, Identity, Catalog, Waiting Room, Booking, Checkout, Notifier; ADR-021) and the same infrastructure (PostgreSQL, Redis, Kafka). No component is removed or rewritten.
+  - **Deliberately absent** from the baseline path: waiting-room admission and queue protection, atomic seat reservation, atomic check-and-book, conditional `UPDATE … WHERE status = $from` with a rows-affected check, row or advisory locks, `REPEATABLE READ`/`SERIALIZABLE` isolation, uniqueness constraints that would block a double booking, idempotency keys, and later-phase booking optimisations.
+  - Phase 2 implements the **booking and inventory path only**: client → Gateway → Booking → PostgreSQL → response. The baseline is **for testing and benchmarking only** and is never a production booking flow.
+- **Scope of the invariant exemption.** CLAUDE.md invariants **1, 2, 3, 4 and 7** are intentionally not met **inside the baseline path only**. In exchange:
+  - the baseline uses **its own tables**, never the real `booking_db` schema, so invariant 4's constraints are never weakened in SurgeTix itself;
+  - the unsafe path is **isolated** and **off by default**. The mechanism is open ([AMB-41](docs/10-planning/ambiguities.md#amb-41));
+  - invariants **8** (it publishes no Kafka events), **11** (no cross-service table reads), **12** (parameterised SQL) and **14** (integer paise) still apply.
+- **Derived constraint (for credibility, R-12):** the baseline is unprotected, not sabotaged. It adds no artificial delays on the request path, and it uses the same pool sizes, Go version and infrastructure as SurgeTix. The checkpoint used by the deterministic tests is `nil` outside tests.
+- **Alternatives rejected:** a single monolith (Option A). It is simpler, but the comparison would mix the effect of the service split with the effect of the protections.
+- **Consequences:** The T6 comparison isolates the effect of the protections. The baseline must run through the same service topology as SurgeTix when it is measured, so it is kept frozen after Phase 2 and re-run in phase 9. Open details are tracked as [AMB-38](docs/10-planning/ambiguities.md#amb-38) … [AMB-43](docs/10-planning/ambiguities.md#amb-43). Plan: [phase-2-naive-baseline](docs/10-planning/phase-2-naive-baseline.md).
+
+<a id="adr-035"></a>
+## ADR-035 — Phase 2 baseline implementation decisions
+- **Status:** Accepted (owner, 2026-11-06). Resolves [AMB-38](docs/10-planning/ambiguities.md#amb-38) … [AMB-43](docs/10-planning/ambiguities.md#amb-43). Implements [ADR-034](#adr-034).
+- **Decision (owner):**
+  - **Data (AMB-38):** reserved seats only. Separate baseline tables in `booking_db`, in the Postgres schema `baseline`. `goose` migrations with their own version table. A deterministic seed of 1 event and 500 seats. The real Booking schema is untouched.
+  - **Contract (AMB-39):** the hold API's JSON shape on the test-only route `POST /v1/baseline/events/{eventID}/holds`. `X-Baseline-Buyer-ID` carries the identity. No idempotency. Every benchmark request is unique.
+  - **Transport (AMB-40):** internal HTTP from Gateway to Booking. gRPC stays in phase 4.
+  - **Isolation (AMB-41):** build tag `unsafe_baseline` **and** `SURGETIX_ENABLE_UNSAFE_BASELINE=true`, both required, default off. The guard is proven by tests.
+  - **Observability (AMB-42):** a Prometheus-format `/metrics` endpoint. k6 and the SQL audit are the primary evidence. No Prometheus or Grafana until phase 8.
+  - **Load (AMB-43):** the T1-shaped scenario with 50/100/250 buyers (500 if stable), 3 runs each plus a warm-up. 5,000 buyers is a future distributed run. T6 waits for its dependencies.
+  - **Fairness:** unprotected but not sabotaged. No sleeps, reduced pools or resource caps. The environment is recorded with every run.
+- **Implementation choices made under these decisions (derived, open to review):**
+  - New dependencies: `github.com/pressly/goose/v3` and `github.com/prometheus/client_golang`.
+  - Every process now serves `/metrics` (Go runtime and process CPU/memory). Booking also exports pgx pool statistics. Application routes get RED metrics.
+  - **✅ Approved by the owner, 2026-11-06:** the `201` body keeps `{hold_id, seats, expires_at, amount}`. `hold_id` carries the **booking** id, `expires_at` is always `null` (a baseline booking never expires), and `amount` is integer paise. **This is a baseline-only limitation.** In SurgeTix the same shape describes a 10-minute hold. Errors use RFC 9457 with `type: about:blank` (AMB-12 still open).
+  - The Gateway applies the PDF's 1 s deadline (504 on expiry, 502 if Booking is down) and keeps up to 1,024 idle connections to Booking. Go's default of 2 per host would throttle the baseline.
+  - k6 uses `constant-arrival-rate` configured to saturate (an offered 20,000/s, capped at *B* VUs), so each run measures *B* concurrent buyers. Each request books 2 adjacent seats chosen deterministically.
+  - **✅ Approved by the owner, 2026-11-06 (fail closed):** the flag set on a normal build is a configuration error and the process refuses to start. It is never silently ignored. Verified on the real binaries: exit 1 with the guard message.
+- **Findings (measured 2026-11-06, details in the plan §8):** every run oversold (10–20 double-booked seats). Booking's 12-connection pool is the queue (≥ 99.8 % of acquires waited). At 250 buyers the Gateway's 1 s deadline produced 504s, and in one run 6 bookings committed after their client got a 504. The host→Docker-VM round trip measured 1.348 ms vs 0.154 ms inside the VM. The 500-buyer level was not run (machine stability).
+- **Consequences:** Phase 2 evidence is reproducible from `loadtest/` and the committed SQL. Normal builds are unaffected and cannot serve the baseline. Plan and results: [phase-2-naive-baseline](docs/10-planning/phase-2-naive-baseline.md).

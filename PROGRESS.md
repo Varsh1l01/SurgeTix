@@ -3,7 +3,7 @@
 *Tracks status against the 9-phase build plan (PDF p.36) plus phase 0 (documentation). A phase moves on **only when its gate passes** (PDF p.37).*
 
 **Last updated:** 2026-11-06
-**Current phase:** **2 — Naive baseline** → status: **Not started, blocked by [OQ-7](docs/10-planning/open-questions.md)**. Phase 1 gate passed on 2026-11-06
+**Current phase:** **2 — Naive baseline** → status: **Implemented and measured locally. Awaiting CI on the pull request and owner gate review** ([plan and results](docs/10-planning/phase-2-naive-baseline.md)). Phase 1 gate passed on 2026-11-06
 
 ## Phase status
 
@@ -11,7 +11,7 @@
 |---|---|---|---|---|---|
 | 0 | **Documentation** (not in PDF) | — | Owner approves docs + ambiguities register | 🟢 Approved 2026-11-06 (owner started Phase 1) | [DOCUMENTATION_AUDIT.md](DOCUMENTATION_AUDIT.md) |
 | 1 | Foundations | Week 1 | CI green | 🟢 Gate passed 2026-11-06. Merged to `develop` (PR #1) | [Phase 1 report](#phase-1--foundations), CI run [42148048247](https://github.com/Varsh1l01/SurgeTix/actions/runs/42148048247) |
-| 2 | Naive baseline | Week 2 | Oversell seen | ⚪ Not started (blocked by OQ-7) | — |
+| 2 | Naive baseline | Week 2 | Oversell seen | 🟡 Implemented; oversell seen locally; awaiting CI on the PR and review | [Phase 2 report](#phase-2--naive-baseline) |
 | 3 | Booking core | Weeks 3–4 | T1, T7, T8 pass | ⚪ Not started | — |
 | 4 | Services and gRPC | Week 5 | e2e hold works | ⚪ Not started | — |
 | 5 | Waiting room | Week 6 | T2, T10, T13 pass | ⚪ Not started | — |
@@ -97,6 +97,27 @@ Legend: ⚪ not started · 🔵 in progress · 🟡 awaiting approval · 🟢 ga
 - Local Postgres has no standby, and Redis is a single node (AMB-20 remains open for Kubernetes).
 - While investigating Docker, `wsl --update` upgraded WSL from 2.6.3 to 3.0.3 on this machine. That was unplanned. Docker Desktop (Engine 29.2.1) later started working.
 
+## Phase 2 — Naive baseline
+
+**Gate:** oversell seen (PDF p.36), plus the owner's nine acceptance criteria. **Status:** 🟡 implemented and measured locally. **Not complete** until CI passes on the PR and the owner approves.
+
+| Item | State |
+|---|---|
+| Shape and decisions | ✅ [ADR-034](ARCHITECTURE_DECISIONS.md#adr-034) (OQ-7), [ADR-035](ARCHITECTURE_DECISIONS.md#adr-035) (AMB-38 … AMB-43) |
+| Code | `internal/booking/baseline`, `internal/gateway/baseline`, `internal/platform/{unsafebaseline,metrics,problem}`, `test/e2e`, `loadtest/`. Compiled only with `-tags unsafe_baseline` and served only with `SURGETIX_ENABLE_UNSAFE_BASELINE=true` |
+| Deterministic oversell | ✅ Real Postgres with a barrier: 2→1 seat = 2 bookings, 50→1 = 50, 200→10 = 200 (excess 190), overlapping multi-seat. Sequential control = 0 oversell. Isolation stays READ COMMITTED under a SERIALIZABLE server default. Also over HTTP through the Gateway ([plan §5](docs/10-planning/phase-2-naive-baseline.md#5-deterministic-concurrency-evidence)) |
+| Benchmarks | ✅ 50/100/250 buyers × 3 recorded runs (+ warm-ups), k6 2.3.0. **Every run oversold: 10–20 double-booked seats**. Median req/s 679 / 484 / 560. Median p99 172.5 / 566.3 / 1,018.7 ms. Error rate 0 / 0 / 1.6 % (504 at the 1 s deadline) ([plan §8](docs/10-planning/phase-2-naive-baseline.md#8-measured-results)) |
+| 500 buyers | ❌ Not run. Recommended against on this machine (p99 at the 1 s deadline at 250, 0.72 GB free RAM, degraded sampling). Owner to decide ([plan §8.4](docs/10-planning/phase-2-naive-baseline.md#84-500-buyers-not-run-recommendation)) |
+| Local regression (2026-11-06) | ✅ gofmt, tidy, vet (4 tag sets), unit tests (both builds), integration tests (both tag sets, `-p 1`), builds, binary route check, Compose health, 7 services `/healthz` + `/readyz` 200, guard on real binaries. `-race` ❌ not runnable locally |
+| CI on the PR | ⏳ Not yet run (branch not pushed at the time of writing) |
+
+**Known limitations**
+- **Benchmark caveat:** services run natively on Windows and Postgres in the Docker Desktop VM. The host→VM round trip measured **1.348 ms** vs **0.154 ms** inside the VM. Throughput varied up to 2.3× between repetitions. The causes of the variance are hypotheses ([plan §8.3](docs/10-planning/phase-2-naive-baseline.md#83-windowsdocker-networking-and-variance-caveat)).
+- **No idempotency:** in one 250-buyer run, 6 bookings committed after their client got a 504.
+- **Local test environment:** `testcontainers-go` v0.45.0 intermittently panics on Windows when test packages run in parallel ("rootless Docker is not supported on Windows"). Use `-p 1` locally. CI is Linux.
+- **Sparse sampling:** the resource sampler captured 8–10 samples per 30 s run (target 1/s), and 1 sample in `b250-r1`.
+- **`.gitignore`:** the owner reported adding `loadtest/results/`, but the file on disk does not contain it yet (checked 2026-11-06). The results are kept out of commits by staging explicit paths.
+
 ## Decisions needed before phase 1 (historical, see decision log)
 
 | ID | Why it blocks |
@@ -104,7 +125,7 @@ Legend: ⚪ not started · 🔵 in progress · 🟡 awaiting approval · 🟢 ga
 | Approval of the doc set | Phase 0 gate |
 | [OQ-3](docs/10-planning/open-questions.md) / [AMB-36](docs/10-planning/ambiguities.md#amb-36) | Data-access tooling chosen in Foundations |
 | [AMB-34](docs/10-planning/ambiguities.md#amb-34) | Repository / module layout needed for the skeleton |
-| [OQ-7](docs/10-planning/open-questions.md) | Shape of the naive baseline (phase 2) |
+| [OQ-7](docs/10-planning/open-questions.md) | Shape of the naive baseline (phase 2). ✅ Decided 2026-11-06 ([ADR-034](ARCHITECTURE_DECISIONS.md#adr-034)) |
 | [AMB-20](docs/10-planning/ambiguities.md#amb-20) | Redis topology for Compose |
 | [AMB-01](docs/10-planning/ambiguities.md#amb-01) | PDF file name, ideally fixed before the first commit |
 
@@ -118,6 +139,9 @@ High-severity ambiguities to settle before their phases: [AMB-04](docs/10-planni
 | 2026-11-06 | AMB-34 | Single-module Go monorepo, `cmd/<service>` + `internal/platform` ([ADR-033](ARCHITECTURE_DECISIONS.md#adr-033)) | Owner |
 | 2026-11-06 | Local ports | Non-default host ports to avoid clashes: Postgres 15432, Redis 16379, Kafka 29092, services 18080–18086 (`compose.yaml`, `.env.example`, `README.md`, `cmd/*`) | Owner |
 | 2026-11-06 | Phase 1 | Gate passed (CI run 42148048247 green). PR #1 merged into `develop`. Phase 1 approved | Owner |
+| 2026-11-06 | OQ-7 | Option B: the naive baseline is the same seven components without protections, for testing and benchmarking only ([ADR-034](ARCHITECTURE_DECISIONS.md#adr-034)) | Owner |
+| 2026-11-06 | AMB-38 … AMB-43 | Phase 2 baseline decisions ([ADR-035](ARCHITECTURE_DECISIONS.md#adr-035)). Also approved: baseline-only `hold_id` = booking id with `expires_at: null`, and fail-closed start when the flag is set on a normal build | Owner |
+| 2026-11-06 | Phase 2 acceptance criteria | Nine criteria in addition to the PDF gate "oversell seen" ([TASKS.md](TASKS.md), Phase 2) | Owner |
 | 2026-11-06 | `.gitignore` | Added `bin/`, `*.out`, `*.prof`, `*.pprof`, `desktop.ini`, `kubeconfig*`, `.claude/settings.local.json` | Owner |
 
 ## Change log
@@ -128,4 +152,6 @@ High-severity ambiguities to settle before their phases: [AMB-04](docs/10-planni
 | 2026-11-06 | Phase 1 Foundations implemented (service skeletons, platform packages, Compose, CI). See the Phase 1 section |
 | 2026-11-06 | Phase 1 re-verification: Docker available, integration tests pass, Compose stack healthy on the new host ports, all 7 services ready end to end |
 | 2026-11-06 | Phase 1 gate recorded as passed (CI green, PR #1 merged into `develop`). Current phase moved to 2, blocked by OQ-7 |
+| 2026-11-06 | Phase 2 planning: OQ-7 recorded as ADR-034, plan written, AMB-38 … AMB-43 logged, P2-6 … P2-15 added. No application code |
+| 2026-11-06 | Phase 2 implemented: guarded naive baseline, deterministic oversell tests, Gateway route, `/metrics`, k6 workflow. Local matrix 50/100/250 × 3 measured and documented. Awaiting CI and review |
 | 2026-11-06 | Final pre-commit review: fixed 4 Mermaid parse errors and 4 inaccurate statements, restructured CLAUDE.md into permanent and phase rules, added ARCHITECTURE_REVIEW.md, refreshed DOCUMENTATION_AUDIT.md |

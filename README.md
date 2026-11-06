@@ -4,7 +4,7 @@
 
 SurgeTix sells seats for one event to millions of simultaneous buyers. It **never sells a seat twice**, and it keeps the buying path fast by **letting in only as many users as the system can serve**. It is a portfolio-grade implementation in Go. Payments are simulated by **FakePay**, and no real money moves.
 
-> **Status:** 🟢 **Phase 1 — Foundations complete** (CI green, merged 2026-11-06). There are service skeletons, local infrastructure and CI, but **no business logic yet**. Next: **Phase 2 — Naive baseline**, blocked by the owner decision [OQ-7](docs/10-planning/open-questions.md). See [PROGRESS.md](PROGRESS.md).
+> **Status:** 🟢 **Phase 1 — Foundations complete** (CI green, merged 2026-11-06). There are service skeletons, local infrastructure and CI, but **no business logic yet**. Now: **Phase 2 — Naive baseline**, implemented and measured locally, awaiting CI and review. A deliberately unsafe check-then-book path, isolated behind a build tag and a runtime flag, oversold seats in every run ([results](docs/10-planning/phase-2-naive-baseline.md#8-measured-results), [how to run](loadtest/README.md)). See [PROGRESS.md](PROGRESS.md).
 
 ## Why
 
@@ -87,7 +87,7 @@ SurgeTix/
 | [07-correctness](docs/07-correctness/) | guarantees, failure scenarios |
 | [08-operations](docs/08-operations/) | observability, deployment |
 | [09-testing](docs/09-testing/) | T1…T13 and the baseline comparison |
-| [10-planning](docs/10-planning/) | build phases, open questions, **ambiguities awaiting approval** |
+| [10-planning](docs/10-planning/) | build phases, open questions, **ambiguities awaiting approval**, phase 2 plan |
 
 **Start the review at [ARCHITECTURE_REVIEW.md](ARCHITECTURE_REVIEW.md).** It lists every decision awaiting approval, in build order.
 

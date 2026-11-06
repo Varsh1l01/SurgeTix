@@ -12,11 +12,11 @@ Status values: **Open** (no decision) · **Proposed** (the PDF suggests an answe
 | **OQ-4** | Should a ticket bought through the second-chance queue be transferable, or locked to the buyer? | — | **Open** | 7 (Lifecycle) | `TransferTicket`, tickets schema (no origin flag exists today) |
 | **OQ-5** | Hosting: demo video and local run only, or a small cloud VM during application season? | — | **Open** | 9 (Ship) | Edge (NGINX vs Cloudflare), cost metric |
 | **OQ-6** | Load generation: which cloud VMs for the 50,000-user k6 run, and what budget? | 2–3 cloud VMs (p.10) | **Open** | 5 (T2) | T2, T3, report |
-| **OQ-7** | Should the naive baseline be a single monolith (simplest) or the same services without the waiting room and atomic holds (fairer comparison)? | — | **Open** | **2 (Naive baseline)**, the earliest blocker | T6, the whole comparison report |
+| **OQ-7** | Should the naive baseline be a single monolith (simplest) or the same services without the waiting room and atomic holds (fairer comparison)? | — | **Decided (2026-11-06)**: Option B, the same seven components without protections ([ADR-034](../../ARCHITECTURE_DECISIONS.md#adr-034)). Details open in [AMB-38](ambiguities.md#amb-38) … [AMB-43](ambiguities.md#amb-43) | **2 (Naive baseline)** | T6, the whole comparison report, [phase 2 plan](phase-2-naive-baseline.md) |
 
 ## Decision order
 
-*Derived from "Blocks phase" above:* **OQ-3** and **OQ-7** must be settled before phases 1–2 begin. **OQ-2**, **OQ-6** by phase 5. **OQ-1**, **OQ-4** by phase 7. **OQ-5** by phase 9.
+*Derived from "Blocks phase" above:* **OQ-3** and **OQ-7** must be settled before phases 1–2 begin (OQ-7 decided 2026-11-06). **OQ-2**, **OQ-6** by phase 5. **OQ-1**, **OQ-4** by phase 7. **OQ-5** by phase 9.
 
 ## Recording a decision
 

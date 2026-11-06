@@ -98,6 +98,21 @@ Hold **p99 < 300 ms**; scan **p99 < 150 ms**; hold conflict rate **< 5 %** with 
 | Redis down | Holds skip the bitmap pre-filter |
 | `ConfirmHold` response lost | Idempotent retry returns the existing booking; reconciler uses `GetBookingByOrder` |
 
+## Naive baseline (phase 2 only)
+
+**Implemented in phase 2, testing and benchmarking only** ([ADR-034](../../ARCHITECTURE_DECISIONS.md#adr-034), [ADR-035](../../ARCHITECTURE_DECISIONS.md#adr-035)). It is **not** the Booking design on this page, and it deliberately oversells.
+
+| Item | Baseline |
+|---|---|
+| Code | `internal/booking/baseline` (build tag `unsafe_baseline` only), wired by `cmd/booking/baseline_on.go` |
+| Enabled by | Build tag **and** `SURGETIX_ENABLE_UNSAFE_BASELINE=true`. Otherwise the route does not exist |
+| Route | `POST /v1/baseline/events/{eventID}/holds`, body `{seat_ids}` (1–4), header `X-Baseline-Buyer-ID`. `201 {hold_id, seats, expires_at: null, amount}`, `409` with `unavailable_seat_ids`, `422`, `400` |
+| Data | Postgres schema `baseline` in `booking_db` (`events`, `seats`, `bookings`, `booking_seats` with **no** seat uniqueness). Goose table `baseline_goose_db_version`. Seed: 1 event, 500 seats, 100,000 paise each |
+| Algorithm | `BEGIN ISOLATION LEVEL READ COMMITTED` → plain `SELECT` of seat status → app check → `UPDATE seats SET status='BOOKED'` with **no** status predicate and **no** rows-affected check → insert booking and seat rows → `COMMIT` |
+| Metrics | `holds_total{build="unsafe_baseline",mode="seats",result}`, `seats_remaining`, `double_booked_seats`, `baseline_excess_seat_bookings`, RED per route, pgx pool statistics |
+
+Plan, method and measured results: [phase-2-naive-baseline](../10-planning/phase-2-naive-baseline.md).
+
 ## Open items
 
 [AMB-06](../10-planning/ambiguities.md#amb-06) · [AMB-07](../10-planning/ambiguities.md#amb-07) · [AMB-08](../10-planning/ambiguities.md#amb-08) · [AMB-09](../10-planning/ambiguities.md#amb-09) · [AMB-10](../10-planning/ambiguities.md#amb-10) · [AMB-19](../10-planning/ambiguities.md#amb-19) · [AMB-26](../10-planning/ambiguities.md#amb-26) · [AMB-27](../10-planning/ambiguities.md#amb-27) · [AMB-30](../10-planning/ambiguities.md#amb-30)

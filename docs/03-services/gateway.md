@@ -76,6 +76,10 @@ The Gateway is the **single public HTTP entry point**: *"Every browser request e
 
 RED metrics per route; `queue/state` cache hit ratio; **origin requests per 1,000 queue polls** (p.34).
 
+## Naive baseline route (phase 2 only)
+
+With build tag `unsafe_baseline` **and** `SURGETIX_ENABLE_UNSAFE_BASELINE=true`, the Gateway forwards exactly one route, `POST /v1/baseline/events/{eventID}/holds`, to Booking over **internal HTTP** (`GATEWAY_BOOKING_URL`) ([ADR-035](../../ARCHITECTURE_DECISIONS.md#adr-035), AMB-40). It applies the 1 s gateway deadline (`504` on expiry, `502` if Booking is down) and keeps up to 1,024 idle connections to Booking. There are no auth, rate limits or idempotency in front of it; those arrive in phase 4. gRPC replaces the HTTP hop in phase 4. Code: `internal/gateway/baseline`.
+
 ## Open items
 
 [AMB-08](../10-planning/ambiguities.md#amb-08) · [AMB-12](../10-planning/ambiguities.md#amb-12) (rate-limit values, JWKS cache TTL) · [AMB-14](../10-planning/ambiguities.md#amb-14) · [AMB-15](../10-planning/ambiguities.md#amb-15)

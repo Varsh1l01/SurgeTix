@@ -85,7 +85,8 @@ docs/
 └── 10-planning/
     ├── build-phases.md               9 phases, ~12 weeks, test gates
     ├── open-questions.md             the 7 open questions listed in the PDF
-    └── ambiguities.md                gaps/conflicts found while documenting (needs approval)
+    ├── ambiguities.md                gaps/conflicts found while documenting (needs approval)
+    └── phase-2-naive-baseline.md     phase 2 plan: baseline shape, tests, k6, open items
 ```
 
 ## Documentation conventions

@@ -35,7 +35,9 @@ The open items are concentrated in **lifecycle edges** (partial cancellation, se
 | 4 | [AMB-34](docs/10-planning/ambiguities.md#amb-34) | M | **1** | ✅ Decided 2026-11-06: single-module monorepo ([ADR-033](ARCHITECTURE_DECISIONS.md#adr-033)) |
 | 5 | [OQ-3](docs/10-planning/open-questions.md) / [AMB-36](docs/10-planning/ambiguities.md#amb-36) | L | **1** | Confirm `sqlc` for CRUD + hand-written `pgx` SQL on hot paths (ADR-024 Proposed) |
 | 6 | [AMB-20](docs/10-planning/ambiguities.md#amb-20) | M | **1** | Redis Sentinel (single primary) vs Cluster; HA expectations under Compose; kind vs k3d |
-| 7 | [OQ-7](docs/10-planning/open-questions.md) | — | **2** | Naive baseline as a monolith or as the same services without protections |
+| 7 | [OQ-7](docs/10-planning/open-questions.md) | — | **2** | ✅ Decided 2026-11-06: the same seven components without protections ([ADR-034](ARCHITECTURE_DECISIONS.md#adr-034)) |
+| 7a | [AMB-38](docs/10-planning/ambiguities.md#amb-38), [AMB-41](docs/10-planning/ambiguities.md#amb-41) | **H** | **2** | ✅ Decided 2026-11-06 ([ADR-035](ARCHITECTURE_DECISIONS.md#adr-035)) |
+| 7b | [AMB-39](docs/10-planning/ambiguities.md#amb-39), [AMB-40](docs/10-planning/ambiguities.md#amb-40), [AMB-42](docs/10-planning/ambiguities.md#amb-42), [AMB-43](docs/10-planning/ambiguities.md#amb-43) | M | **2** | ✅ Decided 2026-11-06 ([ADR-035](ARCHITECTURE_DECISIONS.md#adr-035)) |
 | 8 | [AMB-10](docs/10-planning/ambiguities.md#amb-10) | **H** | **3** | Purchase limits: per hold / per user / per payment method; is 4 fixed? |
 | 9 | [AMB-09](docs/10-planning/ambiguities.md#amb-09) | M | 3 | Data model for "price tier" |
 | 10 | [AMB-26](docs/10-planning/ambiguities.md#amb-26), [AMB-27](docs/10-planning/ambiguities.md#amb-27), [AMB-28](docs/10-planning/ambiguities.md#amb-28) | L–M | 3 | Alternatives algorithm; release rules while `PAYMENT_PENDING`; round-trip counting |
@@ -50,7 +52,7 @@ The open items are concentrated in **lifecycle edges** (partial cancellation, se
 | 19 | [OQ-5](docs/10-planning/open-questions.md), [AMB-37](docs/10-planning/ambiguities.md#amb-37) | L | 9 | Hosting; AuthPlatform reference |
 | 20 | [AMB-12](docs/10-planning/ambiguities.md#amb-12) | M | 3–6 (per item) | Numeric parameters and wire formats, approved per phase |
 
-**Totals:** 36 ambiguities open (4 high), 1 resolved by PDF v2 (AMB-21), 7 PDF open questions, 1 proposed ADR (ADR-024).
+**Totals:** 35 ambiguities open (4 high), 7 approved (AMB-34, AMB-38 … AMB-43), 1 resolved by PDF v2 (AMB-21). 7 PDF open questions, 1 decided (OQ-7). 1 proposed ADR (ADR-024).
 
 ---
 
@@ -91,7 +93,7 @@ Likelihood/impact are the reviewer's estimate. "Mitigation in PDF" cites existin
 | R-9 | **Local HA fidelity**: Compose runs every database on one Postgres instance with no standby, so failover behaviour (F13) is only observable on Kubernetes | H / L | CloudNativePG on K8s | AMB-20 |
 | R-10 | **Laptop resource load**: kind/k3d plus CloudNativePG, Strimzi (3 brokers), Sentinel and the observability stack can exhaust a laptop, which distorts chaos (T4) and latency results | M / M | Report states exact setup | OQ-5, OQ-6 |
 | R-11 | **Secrets unspecified**: the QR-secret encryption key, webhook HMAC secret, token signing keys and their rotation | M / M | "Never sent in plain form" | AMB-19 |
-| R-12 | **Baseline credibility**: the "≥ 10× lower error rate" claim depends on a baseline that reviewers accept as fair | M / M | Identical k6 profile (T6) | OQ-7 |
+| R-12 | **Baseline credibility**: the "≥ 10× lower error rate" claim depends on a baseline that reviewers accept as fair | M / M | Identical k6 profile (T6); same seven-component topology ([ADR-034](ARCHITECTURE_DECISIONS.md#adr-034)); unprotected but not sabotaged | AMB-40, AMB-43 |
 | R-13 | **Schedule**: 9 gates in ~12 part-time weeks; the PDF itself says the timeline stretches rather than skipping gates | H / L | Gate rule | — (acknowledge) |
 | R-14 | **Untested failure modes**: F9 Redis down, F11 edge down, F13 Postgres failover and F14 expiry stopped have no scenario | M / M | — | AMB-02 |
 

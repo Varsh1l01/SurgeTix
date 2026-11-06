@@ -33,6 +33,11 @@ type Options struct {
 	CheckTimeout    time.Duration // per readiness check; default 2s
 	Logger          *slog.Logger
 	Checks          []Check
+	// Metrics, if set, is served at GET /metrics (Prometheus text format).
+	Metrics http.Handler
+	// Routes, if set, receives every request that is not /healthz, /readyz
+	// or /metrics. Phase 1 services leave it nil.
+	Routes http.Handler
 }
 
 // Server is the HTTP side of a service. It is separate from Run so tests can
@@ -53,13 +58,20 @@ func New(opts Options) *Server {
 	return &Server{opts: opts}
 }
 
-// Handler serves /healthz and /readyz.
+// Handler serves /healthz and /readyz, plus /metrics and the service's own
+// routes when they are configured.
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]any{"status": "ok", "service": s.opts.Name})
 	})
 	mux.HandleFunc("GET /readyz", s.ready)
+	if s.opts.Metrics != nil {
+		mux.Handle("GET /metrics", s.opts.Metrics)
+	}
+	if s.opts.Routes != nil {
+		mux.Handle("/", s.opts.Routes)
+	}
 	return mux
 }
 

@@ -8,6 +8,8 @@
 
 Schemas for **Identity** (`users`, `credentials`, `oauth_accounts`, `signing_keys`) and **Catalog** (`events`, `venues`, `seat_layouts`) are **named but not specified** in the PDF. They are not reproduced here ([AMB-13](../10-planning/ambiguities.md#amb-13)).
 
+**Not in this schema:** the phase 2 naive baseline uses separate, deliberately unconstrained tables in the Postgres schema `baseline` inside `booking_db` (`internal/booking/baseline/migrations/`, goose table `baseline_goose_db_version`). This schema's constraints are therefore never weakened ([ADR-034](../../ARCHITECTURE_DECISIONS.md#adr-034), [ADR-035](../../ARCHITECTURE_DECISIONS.md#adr-035)).
+
 ---
 
 ## booking_db

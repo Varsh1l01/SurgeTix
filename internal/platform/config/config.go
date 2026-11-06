@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -72,6 +73,21 @@ func (e *Env) Duration(key string, def time.Duration) time.Duration {
 		return def
 	}
 	return d
+}
+
+// Bool returns key parsed with strconv.ParseBool, or def when unset or empty.
+// An unparsable value is recorded as an error and def is returned.
+func (e *Env) Bool(key string, def bool) bool {
+	v, ok := e.lookup(key)
+	if !ok || v == "" {
+		return def
+	}
+	b, err := strconv.ParseBool(v)
+	if err != nil {
+		e.errs = append(e.errs, fmt.Errorf("%s: invalid boolean %q", key, v))
+		return def
+	}
+	return b
 }
 
 // Err returns all accumulated errors joined, or nil.

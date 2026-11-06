@@ -42,7 +42,7 @@ flowchart LR
 | Phase | FRs | Tests |
 |---|---|---|
 | 1 | — (infrastructure) | — |
-| 2 | — (baseline only) | T6 (baseline runs) |
+| 2 | — (baseline only; shape per [ADR-034](../../ARCHITECTURE_DECISIONS.md#adr-034), plan in [phase-2-naive-baseline](phase-2-naive-baseline.md)) | T6 (baseline runs; scope per [AMB-43](ambiguities.md#amb-43)) |
 | 3 | FR-6, FR-7, FR-8, FR-9, FR-12, FR-23 † | T1, T7, T8 |
 | 4 | FR-1, FR-2, FR-3 | e2e hold |
 | 5 | FR-4, FR-5, FR-18 | T2, T10, T13 |
