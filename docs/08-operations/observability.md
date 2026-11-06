@@ -16,7 +16,7 @@
 
 Rejected: ELK (heavy on memory), Datadog/New Relic (paid).
 
-**Current state (2026-11-06):** none of this stack exists in the repository yet. Phase 1 has no `/metrics` endpoint. Whether phase 2 adds metrics, Prometheus or Grafana for the baseline is open ([AMB-42](../10-planning/ambiguities.md#amb-42)).
+**Current state (phase 2, 2026-11-06):** every service serves Prometheus-format **`GET /metrics`** (Go runtime and process CPU/memory, `internal/platform/metrics`). Application routes get RED metrics (`http_requests_total{route,method,code}`, `http_request_duration_seconds{route,method}`), and Booking exports pgx pool statistics (`pgxpool_*`, including acquire wait). The naive baseline exports `holds_total`, `seats_remaining` and `double_booked_seats` with `build="unsafe_baseline"`. **Prometheus, Grafana, tracing and Loki are not deployed** until phase 8 ([ADR-035](../../ARCHITECTURE_DECISIONS.md#adr-035)).
 
 ## Metrics
 

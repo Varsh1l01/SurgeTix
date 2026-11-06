@@ -12,19 +12,19 @@ Read this before doing anything in the repository. The sections marked **Permane
 
 ---
 
-## Current phase — Phase 2 (Naive baseline), planning
+## Current phase — Phase 2 (Naive baseline), implemented, awaiting review
 
 Phase 0 was approved on 2026-11-06. Phase 1 (Foundations) passed its gate on 2026-11-06: CI run 42148048247 was green, and PR #1 was merged into `develop` (`1994bc2`). Evidence is in `PROGRESS.md`.
 
-**OQ-7 is decided** (2026-11-06): the baseline is the same seven components **without protections** ([ADR-034](ARCHITECTURE_DECISIONS.md#adr-034)). The plan is [`docs/10-planning/phase-2-naive-baseline.md`](docs/10-planning/phase-2-naive-baseline.md). Until the owner approves the plan and **AMB-38 … AMB-43**:
-1. **No Phase 2 application code** (tasks P2-2 … P2-15 wait on P2-6).
-2. The Phase 1 limits still hold: **no business logic** (holds, queue, admission, payments, sagas, transfers, scanning, frontend, Kubernetes), **no tables** beyond the Compose databases and roles, **no Kafka topics** (AMB-03).
+**OQ-7** and **AMB-38 … AMB-43** are decided ([ADR-034](ARCHITECTURE_DECISIONS.md#adr-034), [ADR-035](ARCHITECTURE_DECISIONS.md#adr-035)). The baseline is implemented and measured locally ([plan and results](docs/10-planning/phase-2-naive-baseline.md)). It awaits CI on the pull request and the owner's gate review (P2-14, P2-15). Until Phase 2 is approved:
+1. **No Phase 3 work.** The real booking schema, holds, idempotency and goose migrations for the real tables wait.
+2. The limits still hold outside the baseline: **no business logic**, **no tables** beyond the Compose databases and roles plus the `baseline` schema, **no Kafka topics** (AMB-03).
 
-**When the baseline is built** (ADR-034): invariants 1, 2, 3, 4 and 7 are deliberately not met **inside the isolated baseline path only**. It must use its own tables (never the real `booking_db` schema), be off by default, set `READ COMMITTED` explicitly, and never gain a hidden protection (lock, conditional update, stricter isolation, uniqueness). Invariants 8, 11, 12 and 14 still apply. No other code may call it.
+**Baseline rules** (ADR-034/035): invariants 1, 2, 3, 4 and 7 are deliberately not met **inside the isolated baseline path only** (`internal/booking/baseline`, `internal/gateway/baseline`, build tag `unsafe_baseline`). It uses only the `baseline` schema, is off unless both keys are set (a normal build with the flag refuses to start), sets `READ COMMITTED` explicitly, and must never gain a hidden protection (lock, conditional update, stricter isolation, uniqueness) or an artificial handicap (sleeps, reduced pools, resource caps). Invariants 8, 11, 12 and 14 still apply. No other code may call it. Keep `loadtest/results/` out of commits.
 
 Before phase 3: **OQ-3 / AMB-36** (sqlc), **AMB-10**, **AMB-09**.
 
-**Local environment:** host ports are non-default (Postgres 15432, Redis 16379, Kafka 29092, services 18080–18086). `-race` runs only in CI on this machine. Local integration tests need `TESTCONTAINERS_RYUK_DISABLED=true`. CI runs on pull requests and on pushes to `main`, but not on direct pushes to `develop`.
+**Local environment:** host ports are non-default (Postgres 15432, Redis 16379, Kafka 29092, services 18080–18086). `-race` runs only in CI on this machine. Local integration tests need `TESTCONTAINERS_RYUK_DISABLED=true` and `-p 1` (testcontainers-go v0.45.0 panics intermittently on Windows when packages run in parallel). CI runs on pull requests and on pushes to `main`, but not on direct pushes to `develop`.
 
 **Code layout (ADR-033):** `cmd/<service>/main.go` declares only that service's dependencies via `app.Main`. Shared infrastructure lives in `internal/platform/`. Business code goes in `internal/<service>/`, which must never import another service's package. Each service reads only its own `<SERVICE>_DATABASE_URL`.
 

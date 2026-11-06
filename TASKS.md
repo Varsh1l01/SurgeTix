@@ -44,27 +44,27 @@ Legend: ☐ to do · ☑ done · ⛔ blocked
 
 ---
 
-## Phase 2 — Naive baseline (Week 2) · Gate: **oversell seen** · current (planning)
+## Phase 2 — Naive baseline (Week 2) · Gate: **oversell seen** · current (implemented, awaiting CI and review)
 
-Plan: [phase-2-naive-baseline](docs/10-planning/phase-2-naive-baseline.md) · Decision: [ADR-034](ARCHITECTURE_DECISIONS.md#adr-034). **No application code until P2-6 is done and the owner approves the plan.**
+Plan and results: [phase-2-naive-baseline](docs/10-planning/phase-2-naive-baseline.md) · Decisions: [ADR-034](ARCHITECTURE_DECISIONS.md#adr-034), [ADR-035](ARCHITECTURE_DECISIONS.md#adr-035) · Run: [`loadtest/README.md`](loadtest/README.md).
 
 | ID | Task | Depends on |
 |---|---|---|
 | P2-1 | Decide the baseline shape (monolith vs services without waiting room/atomic holds) | ☑ Option B, 2026-11-06 ([ADR-034](ARCHITECTURE_DECISIONS.md#adr-034)) |
-| P2-2 | Implement check-then-book (deliberately non-atomic): naive repository with CHECK and BOOK SQL, explicit `READ COMMITTED`, nil-by-default checkpoint between them | P2-7 |
-| P2-3 | k6 baseline scenarios (arrival-rate), kept identical for T6 later, plus the reset → run → audit wrapper | P2-10, ⛔ [AMB-43](docs/10-planning/ambiguities.md#amb-43) |
-| P2-4 | Audit queries over the baseline tables: double-booked seats, excess bookings (and oversold GA if in scope) | P2-7 |
-| P2-5 | Run, record and archive the baseline oversell evidence | P2-3, P2-4, P2-12 |
-| P2-6 | **Owner:** approve the phase 2 plan and decide AMB-38 … AMB-43 | ⛔ [AMB-38](docs/10-planning/ambiguities.md#amb-38), [AMB-39](docs/10-planning/ambiguities.md#amb-39), [AMB-40](docs/10-planning/ambiguities.md#amb-40), [AMB-41](docs/10-planning/ambiguities.md#amb-41), [AMB-42](docs/10-planning/ambiguities.md#amb-42), [AMB-43](docs/10-planning/ambiguities.md#amb-43) |
-| P2-7 | Baseline tables, seed and reset command (separate from the real schema) | ⛔ [AMB-38](docs/10-planning/ambiguities.md#amb-38) |
-| P2-8 | Deterministic concurrency tests on real Postgres (barrier): 2 on 1 seat, *k* on 1 seat, demand ≫ inventory, overlapping multi-seat, sequential control, isolation-level assertion; pass `-race` | P2-2 |
-| P2-9 | Booking HTTP endpoint for the baseline, behind the isolation guard (off by default) | P2-2, ⛔ [AMB-39](docs/10-planning/ambiguities.md#amb-39), [AMB-41](docs/10-planning/ambiguities.md#amb-41) |
-| P2-10 | Gateway routing to Booking, plus an end-to-end test against Compose | P2-9, ⛔ [AMB-40](docs/10-planning/ambiguities.md#amb-40) |
-| P2-11 | Baseline metrics: requests, outcomes, inventory, oversell, latency, errors | ⛔ [AMB-42](docs/10-planning/ambiguities.md#amb-42) |
-| P2-12 | Benchmark matrix: inventory sizes × arrival rates, repeated runs, environment captured with each result | P2-3, ⛔ [AMB-43](docs/10-planning/ambiguities.md#amb-43) |
-| P2-13 | Document architecture, method and **measured** results (plan §8); no estimated numbers | P2-5 |
-| P2-14 | Regression: Phase 1 checks, Compose health, `/healthz` + `/readyz` for all 7 services, CI green on the PR | P2-10 |
-| P2-15 | **Owner:** gate review: oversell seen + the 9 acceptance criteria | P2-13, P2-14 |
+| P2-2 | Implement check-then-book (deliberately non-atomic): naive repository with CHECK and BOOK SQL, explicit `READ COMMITTED`, nil-by-default checkpoint between them | ☑ `internal/booking/baseline/store.go` |
+| P2-3 | k6 baseline scenarios (arrival-rate), kept identical for T6 later, plus the reset → run → audit wrapper | ☑ `loadtest/k6/baseline-t1.js`, `loadtest/baseline/` |
+| P2-4 | Audit queries over the baseline tables: double-booked seats, excess bookings (and oversold GA if in scope) | ☑ `sql/audit.sql` (GA out of scope) |
+| P2-5 | Run, record and archive the baseline oversell evidence | ☑ Plan §5 and §8. Raw output kept locally in `loadtest/results/`, not committed |
+| P2-6 | **Owner:** approve the phase 2 plan and decide AMB-38 … AMB-43 | ☑ 2026-11-06 ([ADR-035](ARCHITECTURE_DECISIONS.md#adr-035)) |
+| P2-7 | Baseline tables, seed and reset command (separate from the real schema) | ☑ goose migrations, schema `baseline`, `sql/reset.sql` |
+| P2-8 | Deterministic concurrency tests on real Postgres (barrier): 2 on 1 seat, *k* on 1 seat, demand ≫ inventory, overlapping multi-seat, sequential control, isolation-level assertion; pass `-race` | ☑ pass locally; `-race` ⏳ CI |
+| P2-9 | Booking HTTP endpoint for the baseline, behind the isolation guard (off by default) | ☑ incl. guard tests in both builds and the `go list -deps` check |
+| P2-10 | Gateway routing to Booking, plus an end-to-end test against Compose | ☑ `internal/gateway/baseline`, `test/e2e`, and the benchmark runs through Compose |
+| P2-11 | Baseline metrics: requests, outcomes, inventory, oversell, latency, errors | ☑ `/metrics` on all services (plan §7) |
+| P2-12 | Benchmark matrix: inventory sizes × arrival rates, repeated runs, environment captured with each result | ☑ 50/100/250 buyers × 3 runs + warm-ups. 500 **not run** (plan §8.4, owner to decide) |
+| P2-13 | Document architecture, method and **measured** results (plan §8); no estimated numbers | ☑ |
+| P2-14 | Regression: Phase 1 checks, Compose health, `/healthz` + `/readyz` for all 7 services, CI green on the PR | ◐ local regression passes (plan §10). CI on the PR ⏳ |
+| P2-15 | **Owner:** gate review: oversell seen + the 9 acceptance criteria | ⏳ after CI |
 
 **Acceptance criteria (owner, 2026-11-06).** Phase 2 is complete only when: (1) the naive flow works end to end · (2) the seven-service architecture is intact · (3) a reproducible concurrency test exists · (4) the oversell is demonstrated and documented with test evidence · (5) the k6 load tests run · (6) latency, throughput and error-rate metrics are recorded · (7) the results are reproducible · (8) the docs contain the architecture, method and measured results · (9) no Phase 1 function is broken. The PDF gate is **oversell seen**.
 

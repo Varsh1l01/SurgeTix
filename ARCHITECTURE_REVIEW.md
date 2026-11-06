@@ -36,8 +36,8 @@ The open items are concentrated in **lifecycle edges** (partial cancellation, se
 | 5 | [OQ-3](docs/10-planning/open-questions.md) / [AMB-36](docs/10-planning/ambiguities.md#amb-36) | L | **1** | Confirm `sqlc` for CRUD + hand-written `pgx` SQL on hot paths (ADR-024 Proposed) |
 | 6 | [AMB-20](docs/10-planning/ambiguities.md#amb-20) | M | **1** | Redis Sentinel (single primary) vs Cluster; HA expectations under Compose; kind vs k3d |
 | 7 | [OQ-7](docs/10-planning/open-questions.md) | — | **2** | ✅ Decided 2026-11-06: the same seven components without protections ([ADR-034](ARCHITECTURE_DECISIONS.md#adr-034)) |
-| 7a | [AMB-38](docs/10-planning/ambiguities.md#amb-38), [AMB-41](docs/10-planning/ambiguities.md#amb-41) | **H** | **2** | Baseline tables and where they live; how the unsafe path is isolated |
-| 7b | [AMB-39](docs/10-planning/ambiguities.md#amb-39), [AMB-40](docs/10-planning/ambiguities.md#amb-40), [AMB-42](docs/10-planning/ambiguities.md#amb-42), [AMB-43](docs/10-planning/ambiguities.md#amb-43) | M | **2** | Baseline request contract; Gateway transport before gRPC; metrics without Prometheus/Grafana; T6 scope and scale |
+| 7a | [AMB-38](docs/10-planning/ambiguities.md#amb-38), [AMB-41](docs/10-planning/ambiguities.md#amb-41) | **H** | **2** | ✅ Decided 2026-11-06 ([ADR-035](ARCHITECTURE_DECISIONS.md#adr-035)) |
+| 7b | [AMB-39](docs/10-planning/ambiguities.md#amb-39), [AMB-40](docs/10-planning/ambiguities.md#amb-40), [AMB-42](docs/10-planning/ambiguities.md#amb-42), [AMB-43](docs/10-planning/ambiguities.md#amb-43) | M | **2** | ✅ Decided 2026-11-06 ([ADR-035](ARCHITECTURE_DECISIONS.md#adr-035)) |
 | 8 | [AMB-10](docs/10-planning/ambiguities.md#amb-10) | **H** | **3** | Purchase limits: per hold / per user / per payment method; is 4 fixed? |
 | 9 | [AMB-09](docs/10-planning/ambiguities.md#amb-09) | M | 3 | Data model for "price tier" |
 | 10 | [AMB-26](docs/10-planning/ambiguities.md#amb-26), [AMB-27](docs/10-planning/ambiguities.md#amb-27), [AMB-28](docs/10-planning/ambiguities.md#amb-28) | L–M | 3 | Alternatives algorithm; release rules while `PAYMENT_PENDING`; round-trip counting |
@@ -52,7 +52,7 @@ The open items are concentrated in **lifecycle edges** (partial cancellation, se
 | 19 | [OQ-5](docs/10-planning/open-questions.md), [AMB-37](docs/10-planning/ambiguities.md#amb-37) | L | 9 | Hosting; AuthPlatform reference |
 | 20 | [AMB-12](docs/10-planning/ambiguities.md#amb-12) | M | 3–6 (per item) | Numeric parameters and wire formats, approved per phase |
 
-**Totals:** 41 ambiguities open (6 high), 1 approved (AMB-34), 1 resolved by PDF v2 (AMB-21). 7 PDF open questions, 1 decided (OQ-7). 1 proposed ADR (ADR-024).
+**Totals:** 35 ambiguities open (4 high), 7 approved (AMB-34, AMB-38 … AMB-43), 1 resolved by PDF v2 (AMB-21). 7 PDF open questions, 1 decided (OQ-7). 1 proposed ADR (ADR-024).
 
 ---
 

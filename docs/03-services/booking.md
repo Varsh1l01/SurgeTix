@@ -100,7 +100,18 @@ Hold **p99 < 300 ms**; scan **p99 < 150 ms**; hold conflict rate **< 5 %** with 
 
 ## Naive baseline (phase 2 only)
 
-Phase 2 adds a deliberately unsafe **check-then-book** path to Booking for testing and benchmarking only ([ADR-034](../../ARCHITECTURE_DECISIONS.md#adr-034)). It reads seat status without a lock, then books without a status predicate or rows-affected check, under `READ COMMITTED`. It uses its own tables, never the schema above, and is isolated and off by default. It is **not** the Booking design described on this page. Plan: [phase-2-naive-baseline](../10-planning/phase-2-naive-baseline.md). Open: [AMB-38](../10-planning/ambiguities.md#amb-38) … [AMB-43](../10-planning/ambiguities.md#amb-43).
+**Implemented in phase 2, testing and benchmarking only** ([ADR-034](../../ARCHITECTURE_DECISIONS.md#adr-034), [ADR-035](../../ARCHITECTURE_DECISIONS.md#adr-035)). It is **not** the Booking design on this page, and it deliberately oversells.
+
+| Item | Baseline |
+|---|---|
+| Code | `internal/booking/baseline` (build tag `unsafe_baseline` only), wired by `cmd/booking/baseline_on.go` |
+| Enabled by | Build tag **and** `SURGETIX_ENABLE_UNSAFE_BASELINE=true`. Otherwise the route does not exist |
+| Route | `POST /v1/baseline/events/{eventID}/holds`, body `{seat_ids}` (1–4), header `X-Baseline-Buyer-ID`. `201 {hold_id, seats, expires_at: null, amount}`, `409` with `unavailable_seat_ids`, `422`, `400` |
+| Data | Postgres schema `baseline` in `booking_db` (`events`, `seats`, `bookings`, `booking_seats` with **no** seat uniqueness). Goose table `baseline_goose_db_version`. Seed: 1 event, 500 seats, 100,000 paise each |
+| Algorithm | `BEGIN ISOLATION LEVEL READ COMMITTED` → plain `SELECT` of seat status → app check → `UPDATE seats SET status='BOOKED'` with **no** status predicate and **no** rows-affected check → insert booking and seat rows → `COMMIT` |
+| Metrics | `holds_total{build="unsafe_baseline",mode="seats",result}`, `seats_remaining`, `double_booked_seats`, `baseline_excess_seat_bookings`, RED per route, pgx pool statistics |
+
+Plan, method and measured results: [phase-2-naive-baseline](../10-planning/phase-2-naive-baseline.md).
 
 ## Open items
 

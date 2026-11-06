@@ -4,7 +4,7 @@
 
 SurgeTix sells seats for one event to millions of simultaneous buyers. It **never sells a seat twice**, and it keeps the buying path fast by **letting in only as many users as the system can serve**. It is a portfolio-grade implementation in Go. Payments are simulated by **FakePay**, and no real money moves.
 
-> **Status:** 🟢 **Phase 1 — Foundations complete** (CI green, merged 2026-11-06). There are service skeletons, local infrastructure and CI, but **no business logic yet**. Now: **Phase 2 — Naive baseline**, planning. OQ-7 is decided ([ADR-034](ARCHITECTURE_DECISIONS.md#adr-034)), and implementation waits for owner approval of the [plan](docs/10-planning/phase-2-naive-baseline.md) and AMB-38 … AMB-43. See [PROGRESS.md](PROGRESS.md).
+> **Status:** 🟢 **Phase 1 — Foundations complete** (CI green, merged 2026-11-06). There are service skeletons, local infrastructure and CI, but **no business logic yet**. Now: **Phase 2 — Naive baseline**, implemented and measured locally, awaiting CI and review. A deliberately unsafe check-then-book path, isolated behind a build tag and a runtime flag, oversold seats in every run ([results](docs/10-planning/phase-2-naive-baseline.md#8-measured-results), [how to run](loadtest/README.md)). See [PROGRESS.md](PROGRESS.md).
 
 ## Why
 
