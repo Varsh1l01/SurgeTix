@@ -3,14 +3,14 @@
 *Tracks status against the 9-phase build plan (PDF p.36) plus phase 0 (documentation). A phase moves on **only when its gate passes** (PDF p.37).*
 
 **Last updated:** 2026-11-06
-**Current phase:** **1 — Foundations** → status: **Implemented, awaiting first CI run and owner review**
+**Current phase:** **2 — Naive baseline** → status: **Not started, blocked by [OQ-7](docs/10-planning/open-questions.md)**. Phase 1 gate passed on 2026-11-06
 
 ## Phase status
 
 | # | Phase | Planned weeks | Gate | Status | Gate evidence |
 |---|---|---|---|---|---|
 | 0 | **Documentation** (not in PDF) | — | Owner approves docs + ambiguities register | 🟢 Approved 2026-11-06 (owner started Phase 1) | [DOCUMENTATION_AUDIT.md](DOCUMENTATION_AUDIT.md) |
-| 1 | Foundations | Week 1 | CI green | 🟡 Implemented; gate pending the first CI run on GitHub | [Phase 1 report](#phase-1--foundations) |
+| 1 | Foundations | Week 1 | CI green | 🟢 Gate passed 2026-11-06. Merged to `develop` (PR #1) | [Phase 1 report](#phase-1--foundations), CI run [42148048247](https://github.com/Varsh1l01/SurgeTix/actions/runs/42148048247) |
 | 2 | Naive baseline | Week 2 | Oversell seen | ⚪ Not started (blocked by OQ-7) | — |
 | 3 | Booking core | Weeks 3–4 | T1, T7, T8 pass | ⚪ Not started | — |
 | 4 | Services and gRPC | Week 5 | e2e hold works | ⚪ Not started | — |
@@ -37,7 +37,19 @@ Legend: ⚪ not started · 🔵 in progress · 🟡 awaiting approval · 🟢 ga
 
 ## Phase 1 — Foundations
 
-**Gate:** CI green (PDF p.36). **Status:** 🟡 implemented; gate pending the first CI run.
+**Gate:** CI green (PDF p.36). **Status:** 🟢 **passed 2026-11-06**.
+
+### Gate evidence
+
+| Item | Result |
+|---|---|
+| Implementation commit | `01810e4` *feat: phase 1 foundations (service skeletons, platform, Compose, CI)* |
+| Pull request | [#1](https://github.com/Varsh1l01/SurgeTix/pull/1) `feature/phase-1-foundations` → `develop`, merged 2026-11-06 02:09 UTC as `1994bc2` |
+| GitHub Actions | Run [42148048247](https://github.com/Varsh1l01/SurgeTix/actions/runs/42148048247) (`pull_request`, head `01810e4`): **success** |
+| ↳ `checks` | ✅ success: gofmt, `go mod tidy` clean, vet (both tags), `go test -race`, build of all services |
+| ↳ `integration` | ✅ success: `go test -race -tags=integration` against real Postgres, Redis and Kafka (testcontainers, Ryuk enabled) |
+| ↳ `compose` | ✅ success: `docker compose up -d --wait` became healthy from `.env.example` |
+| Owner approval | Owner merged PR #1 and instructed that Phase 1 be recorded as complete (2026-11-06) |
 
 ### Implemented
 
@@ -69,17 +81,21 @@ Legend: ⚪ not started · 🔵 in progress · 🟡 awaiting approval · 🟢 ga
 | `docker compose up -d --wait` | ✅ all 3 containers `(healthy)` on host ports 15432 / 16379 / 29092 (moved from the defaults by owner decision, because a host Postgres held 5432 and WSL held 6379) |
 | End-to-end smoke test (all 7 binaries against the Compose stack) | ✅ every service: `/healthz` 200, `/readyz` 200 with its own dependency checks. Stopping Redis turned gateway and booking `/readyz` to 503 naming the failed check. `booking_svc` → `checkout_db` is refused (`no CONNECT privilege`) |
 | Integration tests (`-tags=integration`) | ✅ all pass against real Postgres, Redis and Kafka (testcontainers), re-run later the same day. Needed `TESTCONTAINERS_RYUK_DISABLED=true` locally because the Ryuk reaper container fails on this Docker Desktop. CI runs with Ryuk enabled |
-| `go test -race` | ❌ **not run locally**: the installed MinGW gcc is 32-bit. Runs in CI |
-| Workflow lint (actionlint) | ❌ **not run**: blocked by tool permissions. GitHub validates the workflow on push |
+| `go test -race` | ⚠️ **not run locally** (the installed MinGW gcc is 32-bit). ✅ passed in CI (`checks` and `integration` jobs) |
+| Workflow lint (actionlint) | ⚠️ **not run** locally. GitHub parsed and ran the workflow successfully |
+| Re-run on `develop` after the merge (`1994bc2`) | ✅ gofmt clean, vet (both tags), build, and all unit + integration tests pass (`TESTCONTAINERS_RYUK_DISABLED=true`). Coverage: config 93.1 %, service 91.8 %, app 65.2 %, kafka/logging/postgres/redisx 100 % |
 
 ### Known limitations
 
-- The Phase 1 gate cannot be confirmed until the CI jobs `checks`, `integration` and `compose` pass on GitHub.
+- CI triggers only on pull requests and on pushes to `main`. Commits pushed straight to `develop` (such as documentation updates) are not run by CI.
+- `-race` cannot run on the current development machine (32-bit C compiler). CI is the only place it runs.
+- Locally, testcontainers needs `TESTCONTAINERS_RYUK_DISABLED=true` because the Ryuk reaper fails on this Docker Desktop. With Ryuk off, a crashed test run can leave containers behind (`docker ps -a`).
+- Host ports are non-default (Postgres 15432, Redis 16379, Kafka 29092, services 18080–18086) because other software on the development machine holds 5432, 6379 and 8080.
 - Services run on the host. There are no Dockerfiles yet; containerising services belongs with Kubernetes (phase 9).
 - `goose`, `sqlc` and `buf` are not wired yet (no migrations, queries or protos exist). Deferred to phases 3 and 4.
 - No Kafka topics exist, and auto-creation is disabled (AMB-03 open).
 - Local Postgres has no standby, and Redis is a single node (AMB-20 remains open for Kubernetes).
-- While investigating Docker, `wsl --update` upgraded WSL from 2.6.3 to 3.0.3 on this machine. That was unplanned and did not fix the WSL error; a reboot or a *Virtual Machine Platform* repair may be needed.
+- While investigating Docker, `wsl --update` upgraded WSL from 2.6.3 to 3.0.3 on this machine. That was unplanned. Docker Desktop (Engine 29.2.1) later started working.
 
 ## Decisions needed before phase 1 (historical, see decision log)
 
@@ -101,6 +117,7 @@ High-severity ambiguities to settle before their phases: [AMB-04](docs/10-planni
 | 2026-11-06 | Phase 0 | Documentation approved (owner instructed Phase 1 to start) | Owner |
 | 2026-11-06 | AMB-34 | Single-module Go monorepo, `cmd/<service>` + `internal/platform` ([ADR-033](ARCHITECTURE_DECISIONS.md#adr-033)) | Owner |
 | 2026-11-06 | Local ports | Non-default host ports to avoid clashes: Postgres 15432, Redis 16379, Kafka 29092, services 18080–18086 (`compose.yaml`, `.env.example`, `README.md`, `cmd/*`) | Owner |
+| 2026-11-06 | Phase 1 | Gate passed (CI run 42148048247 green). PR #1 merged into `develop`. Phase 1 approved | Owner |
 | 2026-11-06 | `.gitignore` | Added `bin/`, `*.out`, `*.prof`, `*.pprof`, `desktop.ini`, `kubeconfig*`, `.claude/settings.local.json` | Owner |
 
 ## Change log
@@ -110,4 +127,5 @@ High-severity ambiguities to settle before their phases: [AMB-04](docs/10-planni
 | 2026-11-06 | Phase 0: documentation repository initialised from PDF v2. Citations moved from v1 to v2 after the source was replaced mid-task |
 | 2026-11-06 | Phase 1 Foundations implemented (service skeletons, platform packages, Compose, CI). See the Phase 1 section |
 | 2026-11-06 | Phase 1 re-verification: Docker available, integration tests pass, Compose stack healthy on the new host ports, all 7 services ready end to end |
+| 2026-11-06 | Phase 1 gate recorded as passed (CI green, PR #1 merged into `develop`). Current phase moved to 2, blocked by OQ-7 |
 | 2026-11-06 | Final pre-commit review: fixed 4 Mermaid parse errors and 4 inaccurate statements, restructured CLAUDE.md into permanent and phase rules, added ARCHITECTURE_REVIEW.md, refreshed DOCUMENTATION_AUDIT.md |

@@ -11,7 +11,7 @@ Legend: ☐ to do · ☑ done · ⛔ blocked
 
 ---
 
-## Phase 0 — Documentation (current)
+## Phase 0 — Documentation (gate passed 2026-11-06)
 
 | ID | Task | Status |
 |---|---|---|
@@ -30,21 +30,21 @@ Legend: ☐ to do · ☑ done · ⛔ blocked
 
 ---
 
-## Phase 1 — Foundations (Week 1) · Gate: **CI green**
+## Phase 1 — Foundations (Week 1) · Gate: **CI green** · 🟢 passed 2026-11-06
 
 | ID | Task | Depends on |
 |---|---|---|
 | P1-1 | Decide and create the repository/module layout | ☑ ADR-033 |
 | P1-2 | Service skeletons (empty binaries with health endpoints only) | ☑ 7 binaries, `/healthz` + `/readyz`, graceful shutdown |
-| P1-3 | Docker Compose with PostgreSQL 17, Redis 7, Kafka (KRaft, 1 broker) | ☑ written; `config` validated; **`up` not yet run** (local WSL failure, CI job pending). Single Redis node locally; the Kubernetes topology question ([AMB-20](docs/10-planning/ambiguities.md#amb-20)) stays open |
+| P1-3 | Docker Compose with PostgreSQL 17, Redis 7, Kafka (KRaft, 1 broker) | ☑ `up --wait` healthy locally (host ports 15432 / 16379 / 29092) and in the CI `compose` job. Single Redis node locally; the Kubernetes topology question ([AMB-20](docs/10-planning/ambiguities.md#amb-20)) stays open |
 | P1-4 | Migration tooling (`goose`) and data-access tooling (`pgx`/`sqlc`) wired | ◐ `pgx` pool wired. `goose` and `sqlc` **deferred to phase 3**: there is no schema or query in phase 1, so wiring them now would be empty. `sqlc` still needs [OQ-3](docs/10-planning/open-questions.md) / [AMB-36](docs/10-planning/ambiguities.md#amb-36) |
-| P1-5 | GitHub Actions CI: build, `go test -race`, lint, `buf` lint/breaking | ☑ gofmt, `go mod tidy` check, vet (both tags), `-race` tests, build, integration and compose jobs. **First run pending push.** `buf` deferred to phase 4 (no `.proto` files yet) |
-| P1-6 | `testcontainers-go` harness for Postgres/Redis/Kafka integration tests | ☑ written and compiled (`-tags=integration`); **not yet run** (needs Docker; runs in the CI `integration` job) |
-| P1-7 | **Owner:** push, confirm all three CI jobs green, review Phase 1 | ☐ |
+| P1-5 | GitHub Actions CI: build, `go test -race`, lint, `buf` lint/breaking | ☑ gofmt, `go mod tidy` check, vet (both tags), `-race` tests, build, integration and compose jobs. First run green (run 42148048247, PR #1). `buf` deferred to phase 4 (no `.proto` files yet) |
+| P1-6 | `testcontainers-go` harness for Postgres/Redis/Kafka integration tests | ☑ passes locally (Ryuk disabled) and in the CI `integration` job with `-race` |
+| P1-7 | **Owner:** push, confirm all three CI jobs green, review Phase 1 | ☑ CI green, PR #1 merged into `develop` 2026-11-06 |
 
 ---
 
-## Phase 2 — Naive baseline (Week 2) · Gate: **oversell seen**
+## Phase 2 — Naive baseline (Week 2) · Gate: **oversell seen** · current, blocked by OQ-7
 
 | ID | Task | Depends on |
 |---|---|---|

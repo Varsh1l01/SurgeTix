@@ -12,16 +12,17 @@ Read this before doing anything in the repository. The sections marked **Permane
 
 ---
 
-## Current phase — Phase 1 (Foundations), awaiting review
+## Current phase — Phase 2 (Naive baseline), blocked by OQ-7
 
-Phase 0 was approved on 2026-11-06. Phase 1 is implemented. Its gate (**CI green**) is pending the first GitHub Actions run.
+Phase 0 was approved on 2026-11-06. Phase 1 (Foundations) passed its gate on 2026-11-06: CI run 42148048247 was green, and PR #1 was merged into `develop` (`1994bc2`). Evidence is in `PROGRESS.md`.
 
-Until the owner approves Phase 1 in `PROGRESS.md`:
-1. **No business logic**: no holds, queue, admission, payments, sagas, transfers, scanning, frontend or Kubernetes.
-2. **No tables** beyond what Compose already creates (databases and roles only). The schema starts in phase 3 with `goose`.
-3. **No Kafka topics**: names are open (AMB-03), and topics come with the outbox relay in phase 4.
+Phase 2 cannot start until the owner decides **OQ-7** (monolith vs the same services without the waiting room and atomic holds). Until then:
+1. **No Phase 2 code**: P2-2 … P2-5 depend on P2-1 (OQ-7).
+2. The Phase 1 limits still hold: **no business logic** (holds, queue, admission, payments, sagas, transfers, scanning, frontend, Kubernetes), **no tables** beyond the Compose databases and roles, **no Kafka topics** (AMB-03).
 
-Before phase 2: decide **OQ-7** (baseline shape). Before phase 3: **OQ-3 / AMB-36** (sqlc), **AMB-10**, **AMB-09**.
+Before phase 3: **OQ-3 / AMB-36** (sqlc), **AMB-10**, **AMB-09**.
+
+**Local environment:** host ports are non-default (Postgres 15432, Redis 16379, Kafka 29092, services 18080–18086). `-race` runs only in CI on this machine. Local integration tests need `TESTCONTAINERS_RYUK_DISABLED=true`. CI runs on pull requests and on pushes to `main`, but not on direct pushes to `develop`.
 
 **Code layout (ADR-033):** `cmd/<service>/main.go` declares only that service's dependencies via `app.Main`. Shared infrastructure lives in `internal/platform/`. Business code goes in `internal/<service>/`, which must never import another service's package. Each service reads only its own `<SERVICE>_DATABASE_URL`.
 

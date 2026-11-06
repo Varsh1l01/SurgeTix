@@ -4,7 +4,7 @@
 
 SurgeTix sells seats for one event to millions of simultaneous buyers. It **never sells a seat twice**, and it keeps the buying path fast by **letting in only as many users as the system can serve**. It is a portfolio-grade implementation in Go. Payments are simulated by **FakePay**, and no real money moves.
 
-> **Status:** 🔵 **Phase 1 — Foundations**, implemented and awaiting review. There are service skeletons, local infrastructure and CI, but **no business logic yet**. See [PROGRESS.md](PROGRESS.md).
+> **Status:** 🟢 **Phase 1 — Foundations complete** (CI green, merged 2026-11-06). There are service skeletons, local infrastructure and CI, but **no business logic yet**. Next: **Phase 2 — Naive baseline**, blocked by the owner decision [OQ-7](docs/10-planning/open-questions.md). See [PROGRESS.md](PROGRESS.md).
 
 ## Why
 
@@ -192,8 +192,9 @@ Every variable, with a safe placeholder, is in [`.env.example`](.env.example).
 | Kafka fails after `KAFKA_CLUSTER_ID` changes | The stored data belongs to the old ID. Run `docker compose down -v` |
 | Docker Desktop (Windows) quits on start; its log shows `Wsl/…/HCS/ERROR_NOT_SUPPORTED` | WSL 2 cannot create its VM. Run `wsl --update`, reboot, and check that *Virtual Machine Platform* is enabled. `wsl -d Ubuntu -e echo ok` must work before Docker can |
 | `go test -race` fails with `64-bit mode not compiled in` | Your C compiler is 32-bit. Install a 64-bit MinGW-w64 toolchain, or rely on CI, which runs `-race` on Linux |
+| Integration tests fail with `reaper: … No such container` (Ryuk) | The testcontainers reaper cannot start on some Docker Desktop setups. Run with `TESTCONTAINERS_RYUK_DISABLED=true`, then remove leftovers with `docker ps -a` if a run crashes. CI keeps Ryuk enabled |
 
-> **Verification status (Phase 1).** These steps were run and verified on the development machine: gofmt, vet, unit tests, building, running a service and querying its health endpoints, and `docker compose config`. Graceful shutdown is verified by a unit test (`service.TestServeShutsDownGracefully`), not by a manual Ctrl+C. These could **not** be run there: `docker compose up`, the integration tests and the `-race` tests (WSL 2 failure; 32-bit C compiler). The CI jobs cover them, and they must pass on the first push before the Phase 1 gate is green. See [PROGRESS.md](PROGRESS.md).
+> **Verification status (Phase 1).** On the development machine (Windows 11): gofmt, vet, build, unit tests, integration tests against real Postgres/Redis/Kafka, `docker compose up --wait` (all three healthy), and all 7 services answering `/healthz` 200 and `/readyz` 200 against the stack. `/readyz` turns 503 when a dependency stops. A service role cannot connect to another service's database. Graceful shutdown is verified by a unit test (`service.TestServeShutsDownGracefully`), not by a manual Ctrl+C. `-race` could not run there (32-bit C compiler), but it passed in CI. All three CI jobs (`checks`, `integration`, `compose`) passed on [run 42148048247](https://github.com/Varsh1l01/SurgeTix/actions/runs/42148048247). See [PROGRESS.md](PROGRESS.md).
 
 ## Load-test report
 
