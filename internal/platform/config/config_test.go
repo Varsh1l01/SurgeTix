@@ -130,3 +130,34 @@ func TestLoadDotEnvDoesNotOverride(t *testing.T) {
 		t.Errorf("missing file should be ignored: %v", err)
 	}
 }
+
+func TestBool(t *testing.T) {
+	cases := []struct {
+		val     string
+		set     bool
+		def     bool
+		want    bool
+		wantErr bool
+	}{
+		{set: false, def: false, want: false},
+		{set: false, def: true, want: true},
+		{val: "", set: true, def: false, want: false},
+		{val: "true", set: true, want: true},
+		{val: "1", set: true, want: true},
+		{val: "false", set: true, def: true, want: false},
+		{val: "yes", set: true, def: false, want: false, wantErr: true},
+	}
+	for _, c := range cases {
+		m := map[string]string{}
+		if c.set {
+			m["FLAG"] = c.val
+		}
+		e := FromMap(m)
+		if got := e.Bool("FLAG", c.def); got != c.want {
+			t.Errorf("Bool(%q, def=%v) = %v, want %v", c.val, c.def, got, c.want)
+		}
+		if (e.Err() != nil) != c.wantErr {
+			t.Errorf("Bool(%q): err = %v, wantErr %v", c.val, e.Err(), c.wantErr)
+		}
+	}
+}
