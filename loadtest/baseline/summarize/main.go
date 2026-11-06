@@ -49,6 +49,9 @@ type run struct {
 	rss    map[string]float64 // peak RSS in MiB, per service
 	pgCPU  float64            // peak Postgres container CPU %
 	srvMS  map[string]float64 // server-side mean latency of the baseline route, per service
+	// Booking pool: share of acquires that waited, and mean wait per acquire.
+	poolShare, poolMS float64
+	samples           int // resource samples captured (per service)
 }
 
 func main() {
@@ -89,6 +92,7 @@ func load(dir string) (run, error) {
 	for _, svc := range []string{"gateway", "booking"} {
 		r.srvMS[svc] = serverMeanMS(filepath.Join(dir, "metrics-"+svc+"-before.txt"), filepath.Join(dir, "metrics-"+svc+"-after.txt"))
 	}
+	r.poolShare, r.poolMS = poolWait(filepath.Join(dir, "metrics-booking-before.txt"), filepath.Join(dir, "metrics-booking-after.txt"))
 	return r, nil
 }
 
@@ -160,10 +164,43 @@ func readProcess(path string, r *run) {
 			first[svc] = cpu
 		}
 		r.cpu[svc] = cpu - first[svc]
+		r.samples++
 		if mib := mem / (1 << 20); mib > r.rss[svc] {
 			r.rss[svc] = mib
 		}
 	}
+	r.samples /= 2 // one row per service per sample
+}
+
+// poolWait reads Booking's pgxpool counters (before vs after): the share of
+// connection acquires that had to wait, and the mean wait per acquire.
+func poolWait(before, after string) (share, meanMS float64) {
+	read := func(path string) map[string]float64 {
+		m := map[string]float64{}
+		b, _ := os.ReadFile(path)
+		for _, line := range strings.Split(string(b), "\n") {
+			if fields := strings.Fields(line); len(fields) == 2 && strings.HasPrefix(fields[0], "pgxpool_") {
+				m[fields[0]], _ = strconv.ParseFloat(fields[1], 64)
+			}
+		}
+		return m
+	}
+	b, a := read(before), read(after)
+	acq := a["pgxpool_acquire_total"] - b["pgxpool_acquire_total"]
+	if acq <= 0 {
+		return 0, 0
+	}
+	return (a["pgxpool_empty_acquire_total"] - b["pgxpool_empty_acquire_total"]) / acq,
+		(a["pgxpool_acquire_duration_seconds_total"] - b["pgxpool_acquire_duration_seconds_total"]) / acq * 1000
+}
+
+// res prints a resource figure, or "–" when the sampler did not capture at
+// least two samples (a delta needs two).
+func (r run) res(v float64, prec int) string {
+	if r.samples < 2 {
+		return "–"
+	}
+	return fmt.Sprintf("%.*f", prec, v)
 }
 
 func readPGPeak(path string) float64 {
@@ -188,18 +225,19 @@ func f(p *float64) string {
 
 func printRuns(title string, runs []run, warmup bool) {
 	fmt.Printf("### %s\n\n", title)
-	fmt.Println("| Run | Buyers | Requests | Req/s | 201 booked | 409 rejected | Other errors | Error rate | p50 ms | p95 ms | p99 ms | Max ms | Double-booked seats | Excess seat bookings | Max bookings/seat | Seats left | Gateway mean ms (server) | Booking mean ms (server) | Booking CPU s | Booking peak RSS MiB | Gateway CPU s | Postgres peak CPU % |")
-	fmt.Println("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
+	fmt.Println("| Run | Buyers | Requests | Req/s | 201 booked | 409 rejected | Other errors | Error rate | p50 ms | p95 ms | p99 ms | Max ms | Double-booked seats | Excess seat bookings | Max bookings/seat | Seats left | Gateway mean ms (server) | Booking mean ms (server) | Pool acquires that waited | Mean pool wait ms | Booking CPU s | Booking peak RSS MiB | Gateway CPU s | Postgres peak CPU % | Samples |")
+	fmt.Println("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
 	for _, r := range runs {
 		if r.warmup != warmup {
 			continue
 		}
 		k, a := r.k, r.audit
-		fmt.Printf("| `%s` | %d | %.0f | %.0f | %.0f | %.0f | %.0f | %.4f | %s | %s | %s | %s | %.0f | %.0f | %.0f | %.0f | %.1f | %.1f | %.1f | %.0f | %.1f | %.0f |\n",
+		fmt.Printf("| `%s` | %d | %.0f | %.0f | %.0f | %.0f | %.0f | %.4f | %s | %s | %s | %s | %.0f | %.0f | %.0f | %.0f | %.1f | %.1f | %.1f%% | %.1f | %s | %s | %s | %s | %d |\n",
 			r.dir, k.Buyers, k.Requests, k.RPS, k.Booked, k.Rejected, k.Failed, k.ErrorRate,
 			f(k.Latency.P50), f(k.Latency.P95), f(k.Latency.P99), f(k.Latency.Max),
 			a["double_booked_seats"], a["excess_seat_bookings"], a["max_bookings_per_seat"], a["seats_available"],
-			r.srvMS["gateway"], r.srvMS["booking"], r.cpu["booking"], r.rss["booking"], r.cpu["gateway"], r.pgCPU)
+			r.srvMS["gateway"], r.srvMS["booking"], 100*r.poolShare, r.poolMS,
+			r.res(r.cpu["booking"], 1), r.res(r.rss["booking"], 0), r.res(r.cpu["gateway"], 1), r.res(r.pgCPU, 0), r.samples)
 	}
 	fmt.Println()
 }
