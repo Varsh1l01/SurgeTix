@@ -5,6 +5,10 @@
 //
 // Phase 1 provides only configuration, logging, dependency connectivity,
 // health endpoints and graceful shutdown. Holds arrive in phase 3.
+//
+// Phase 2 adds the UNSAFE NAIVE BASELINE (ADR-034), present only in binaries
+// built with -tags unsafe_baseline and served only when
+// SURGETIX_ENABLE_UNSAFE_BASELINE=true. See baseline_on.go / baseline_off.go.
 package main
 
 import (
@@ -19,7 +23,7 @@ import (
 )
 
 func main() {
-	app.Main("booking", "BOOKING", ":18084", func(ctx context.Context, env *config.Env) ([]service.Check, []func(), error) {
+	app.MainWithRuntime("booking", "BOOKING", ":18084", func(ctx context.Context, env *config.Env, rt *app.Runtime) ([]service.Check, []func(), error) {
 		var checks []service.Check
 		var closers []func()
 		pool, err := postgres.Open(ctx, env.Required("BOOKING_DATABASE_URL"))
@@ -37,6 +41,9 @@ func main() {
 		}
 		closers = append(closers, kc.Close)
 		checks = append(checks, kafka.Check(kc))
+		if err := setupBaseline(ctx, env, rt, pool); err != nil {
+			return nil, closers, err
+		}
 		return checks, closers, nil
 	})
 }
