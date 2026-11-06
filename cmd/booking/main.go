@@ -32,6 +32,7 @@ func main() {
 		}
 		closers = append(closers, pool.Close)
 		checks = append(checks, postgres.Check(pool))
+		postgres.RegisterPoolMetrics(rt.Metrics, pool)
 		rdb := redisx.New(env.Required("REDIS_ADDR"), env.String("REDIS_PASSWORD", ""))
 		closers = append(closers, func() { _ = rdb.Close() })
 		checks = append(checks, redisx.Check(rdb))

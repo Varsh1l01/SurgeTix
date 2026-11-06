@@ -1,7 +1,10 @@
 # Phase 1 gate: "CI green" (PDF p.36).
 #
-#   checks       gofmt, go vet, unit tests with the race detector, build
-#   integration  real Postgres/Redis/Kafka through testcontainers-go (ADR-029)
+#   checks       gofmt, go vet, unit tests with the race detector, build;
+#                normal AND unsafe_baseline builds, and proof that a normal
+#                binary does not contain the Phase 2 unsafe baseline (ADR-034)
+#   integration  real Postgres/Redis/Kafka through testcontainers-go (ADR-029),
+#                including the baseline's deterministic oversell tests
 #   compose      the local Docker Compose stack starts and becomes healthy
 
 name: CI
@@ -43,12 +46,28 @@ jobs:
         run: |
           go vet ./...
           go vet -tags=integration ./...
+          go vet -tags=unsafe_baseline ./...
+          go vet -tags=integration,unsafe_baseline ./...
 
       - name: unit tests (race)
         run: go test -race -count=1 ./...
 
+      - name: unit tests (race, unsafe_baseline build)
+        run: go test -race -count=1 -tags=unsafe_baseline ./...
+
       - name: build all services
         run: go build -o bin/ ./cmd/...
+
+      - name: normal binaries do not contain the unsafe baseline
+        run: |
+          for b in bin/*; do
+            if grep -a -q "/v1/baseline/" "$b"; then
+              echo "$b contains the unsafe baseline route"; exit 1
+            fi
+          done
+
+      - name: build unsafe_baseline variants
+        run: go build -tags=unsafe_baseline -o bin/unsafe/ ./cmd/booking ./cmd/gateway
 
   integration:
     needs: checks
@@ -58,8 +77,8 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
-      - name: integration tests (testcontainers)
-        run: go test -race -count=1 -tags=integration ./...
+      - name: integration tests (testcontainers, incl. unsafe baseline)
+        run: go test -race -count=1 -tags=integration,unsafe_baseline ./...
 
   compose:
     needs: checks

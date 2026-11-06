@@ -149,9 +149,9 @@ type Metrics struct {
 }
 
 // NewMetrics registers the counters. If store is non-nil it also registers
-// seats_remaining and double_booked_seats, evaluated by SQL at scrape time.
+// seats_remaining, double_booked_seats and baseline_excess_seat_bookings,
+// computed by ONE audit query per scrape (sql/audit.sql).
 func NewMetrics(reg prometheus.Registerer, store *Store) *Metrics {
-	build := prometheus.Labels{"build": "unsafe_baseline"}
 	m := &Metrics{holds: prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name:        "holds_total",
 		Help:        "Booking requests by mode and result (booked, unavailable, invalid, error).",
@@ -159,30 +159,43 @@ func NewMetrics(reg prometheus.Registerer, store *Store) *Metrics {
 	}, []string{"result"})}
 	reg.MustRegister(m.holds)
 	if store != nil {
-		audit := func(pick func(AuditResult) int64) func() float64 {
-			return func() float64 {
-				ctx, cancel := context.WithTimeout(context.Background(), scrapeTimeout)
-				defer cancel()
-				a, err := store.Audit(ctx)
-				if err != nil {
-					return -1 // visible as invalid rather than a plausible 0
-				}
-				return float64(pick(a))
-			}
-		}
-		reg.MustRegister(
-			prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-				Name: "seats_remaining", Help: "Seats with status AVAILABLE (scrape-time SQL).", ConstLabels: build,
-			}, audit(func(a AuditResult) int64 { return a.SeatsAvailable })),
-			prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-				Name: "double_booked_seats", Help: "Seats with more than one booking (scrape-time SQL). SurgeTix must keep this at 0.", ConstLabels: build,
-			}, audit(func(a AuditResult) int64 { return a.DoubleBookedSeats })),
-			prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-				Name: "baseline_excess_seat_bookings", Help: "Seat assignments beyond the seats actually sold (scrape-time SQL).", ConstLabels: build,
-			}, audit(func(a AuditResult) int64 { return a.ExcessSeatBookings })),
-		)
+		reg.MustRegister(newAuditCollector(store))
 	}
 	return m
+}
+
+type auditCollector struct {
+	store                    *Store
+	remaining, double, extra *prometheus.Desc
+}
+
+func newAuditCollector(store *Store) *auditCollector {
+	build := prometheus.Labels{"build": "unsafe_baseline"}
+	return &auditCollector{
+		store:     store,
+		remaining: prometheus.NewDesc("seats_remaining", "Seats with status AVAILABLE (audit SQL at scrape time).", nil, build),
+		double:    prometheus.NewDesc("double_booked_seats", "Seats with more than one booking (audit SQL at scrape time). SurgeTix must keep this at 0.", nil, build),
+		extra:     prometheus.NewDesc("baseline_excess_seat_bookings", "Seat assignments beyond the seats actually sold (audit SQL at scrape time).", nil, build),
+	}
+}
+
+func (c *auditCollector) Describe(ch chan<- *prometheus.Desc) {
+	ch <- c.remaining
+	ch <- c.double
+	ch <- c.extra
+}
+
+func (c *auditCollector) Collect(ch chan<- prometheus.Metric) {
+	ctx, cancel := context.WithTimeout(context.Background(), scrapeTimeout)
+	defer cancel()
+	a, err := c.store.Audit(ctx)
+	if err != nil {
+		ch <- prometheus.NewInvalidMetric(c.double, err) // fail the scrape visibly, never report a plausible 0
+		return
+	}
+	ch <- prometheus.MustNewConstMetric(c.remaining, prometheus.GaugeValue, float64(a.SeatsAvailable))
+	ch <- prometheus.MustNewConstMetric(c.double, prometheus.GaugeValue, float64(a.DoubleBookedSeats))
+	ch <- prometheus.MustNewConstMetric(c.extra, prometheus.GaugeValue, float64(a.ExcessSeatBookings))
 }
 
 // Mount migrates the baseline schema and serves Route on rt. Callers must
