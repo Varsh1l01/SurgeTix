@@ -49,3 +49,6 @@ kubeconfig
 
 # Personal assistant settings
 .claude/settings.local.json
+
+# Phase 2 load-test results
+loadtest/results/
