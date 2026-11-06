@@ -45,7 +45,7 @@
 | [AMB-31](#amb-31) | FakePay API surface | M | 6 | 🟡 |
 | [AMB-32](#amb-32) | Refund amount per ticket and rounding | M | 7 | 🟡 |
 | [AMB-33](#amb-33) | RPC retry rule vs saga retries | L | 6 | 🟡 |
-| [AMB-34](#amb-34) | Repository / code layout | M | 1 | 🟡 (CI resolved by v2) |
+| [AMB-34](#amb-34) | Repository / code layout | M | 1 | ✅ 2026-11-06 (ADR-033) |
 | [AMB-35](#amb-35) | Admin control room: Grafana vs React | L | 8 | 🟡 |
 | [AMB-36](#amb-36) | OQ-3 vs Tech stack (`pgx + sqlc`) | L | 1 | 🟡 |
 | [AMB-37](#amb-37) | "AuthPlatform" reference | L | — | 🟡 |
@@ -260,10 +260,11 @@ Can a `CHECKED_IN` ticket be cancelled or refunded? Can a ticket with a pending 
 **Leaning.** The rule applies to the RPC client layer, and the saga has its own durable retry. Needs confirmation.
 
 <a id="amb-34"></a>
-## AMB-34 — Repository / code layout · M · 🟡 (CI resolved by v2)
+## AMB-34 — Repository / code layout · M · ✅ Approved 2026-11-06
 
 **Resolved by v2.** CI is **GitHub Actions** (p.15).
-**Still open.** Monorepo vs multi-repo; Go module layout (one module or one per service); where `.proto` files live; where the naive baseline, FakePay, k6 scripts, React app, Kubernetes manifests and migrations live. The PDF gives no repository structure. No code directories have been created.
+**Still open.** Monorepo vs multi-repo; Go module layout (one module or one per service); where `.proto` files live; where the naive baseline, FakePay, k6 scripts, React app, Kubernetes manifests and migrations live. The PDF gives no repository structure.
+**✅ Decision (owner, 2026-11-06):** a single Go module monorepo: `cmd/<service>` per binary, `internal/platform` for shared infrastructure, `internal/<service>` added as each phase needs it. Recorded as [ADR-033](../../ARCHITECTURE_DECISIONS.md#adr-033). **Still open within it:** where `.proto` files, the naive baseline, FakePay, k6 scripts, the React app, Kubernetes manifests and migrations live. Decide these when the owning phase starts.
 
 <a id="amb-35"></a>
 ## AMB-35 — Admin control room: Grafana vs React · L · 🟡
