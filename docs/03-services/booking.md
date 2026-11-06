@@ -98,6 +98,10 @@ Hold **p99 < 300 ms**; scan **p99 < 150 ms**; hold conflict rate **< 5 %** with 
 | Redis down | Holds skip the bitmap pre-filter |
 | `ConfirmHold` response lost | Idempotent retry returns the existing booking; reconciler uses `GetBookingByOrder` |
 
+## Naive baseline (phase 2 only)
+
+Phase 2 adds a deliberately unsafe **check-then-book** path to Booking for testing and benchmarking only ([ADR-034](../../ARCHITECTURE_DECISIONS.md#adr-034)). It reads seat status without a lock, then books without a status predicate or rows-affected check, under `READ COMMITTED`. It uses its own tables, never the schema above, and is isolated and off by default. It is **not** the Booking design described on this page. Plan: [phase-2-naive-baseline](../10-planning/phase-2-naive-baseline.md). Open: [AMB-38](../10-planning/ambiguities.md#amb-38) … [AMB-43](../10-planning/ambiguities.md#amb-43).
+
 ## Open items
 
 [AMB-06](../10-planning/ambiguities.md#amb-06) · [AMB-07](../10-planning/ambiguities.md#amb-07) · [AMB-08](../10-planning/ambiguities.md#amb-08) · [AMB-09](../10-planning/ambiguities.md#amb-09) · [AMB-10](../10-planning/ambiguities.md#amb-10) · [AMB-19](../10-planning/ambiguities.md#amb-19) · [AMB-26](../10-planning/ambiguities.md#amb-26) · [AMB-27](../10-planning/ambiguities.md#amb-27) · [AMB-30](../10-planning/ambiguities.md#amb-30)

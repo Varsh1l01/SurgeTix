@@ -49,6 +49,12 @@
 | [AMB-35](#amb-35) | Admin control room: Grafana vs React | L | 8 | 🟡 |
 | [AMB-36](#amb-36) | OQ-3 vs Tech stack (`pgx + sqlc`) | L | 1 | 🟡 |
 | [AMB-37](#amb-37) | "AuthPlatform" reference | L | — | 🟡 |
+| [AMB-38](#amb-38) | Naive baseline: inventory model, tables, migrations, dataset | **H** | 2 | 🟡 |
+| [AMB-39](#amb-39) | Naive baseline: request contract (route, identity, idempotency, codes) | M | 2 | 🟡 |
+| [AMB-40](#amb-40) | Naive baseline: Gateway → Booking transport before gRPC | M | 2 | 🟡 |
+| [AMB-41](#amb-41) | Naive baseline: isolating the unsafe path; code, k6 and results locations | **H** | 2 | 🟡 |
+| [AMB-42](#amb-42) | Phase 2 metrics: no Prometheus/Grafana exists yet | M | 2 | 🟡 |
+| [AMB-43](#amb-43) | T6 scope, scale and environment in phase 2 | M | 2 | 🟡 |
 
 ---
 
@@ -264,7 +270,7 @@ Can a `CHECKED_IN` ticket be cancelled or refunded? Can a ticket with a pending 
 
 **Resolved by v2.** CI is **GitHub Actions** (p.15).
 **Still open.** Monorepo vs multi-repo; Go module layout (one module or one per service); where `.proto` files live; where the naive baseline, FakePay, k6 scripts, React app, Kubernetes manifests and migrations live. The PDF gives no repository structure.
-**✅ Decision (owner, 2026-11-06):** a single Go module monorepo: `cmd/<service>` per binary, `internal/platform` for shared infrastructure, `internal/<service>` added as each phase needs it. Recorded as [ADR-033](../../ARCHITECTURE_DECISIONS.md#adr-033). **Still open within it:** where `.proto` files, the naive baseline, FakePay, k6 scripts, the React app, Kubernetes manifests and migrations live. Decide these when the owning phase starts.
+**✅ Decision (owner, 2026-11-06):** a single Go module monorepo: `cmd/<service>` per binary, `internal/platform` for shared infrastructure, `internal/<service>` added as each phase needs it. Recorded as [ADR-033](../../ARCHITECTURE_DECISIONS.md#adr-033). **Still open within it:** where `.proto` files, the naive baseline, FakePay, k6 scripts, the React app, Kubernetes manifests and migrations live. Decide these when the owning phase starts. For the naive baseline, k6 scripts and results, see [AMB-41](#amb-41).
 
 <a id="amb-35"></a>
 ## AMB-35 — Admin control room: Grafana vs React · L · 🟡
@@ -282,6 +288,63 @@ Can a `CHECKED_IN` ticket be cancelled or refunded? Can a ticket with a pending 
 ## AMB-37 — "AuthPlatform" reference · L · 🟡
 
 **Evidence.** The Tech stack's Auth row: *"Shows the security depth from AuthPlatform without a separate project"* (p.14). AuthPlatform is not defined in the document. It appears to be a separate prior project. Confirm whether any code or design is to be reused from it, or whether the mention is context only.
+
+<a id="amb-38"></a>
+## AMB-38 — Naive baseline: inventory model, tables, migrations, dataset · H · 🟡
+
+**Evidence.** Phase 2 is *"check-then-book; k6 baseline runs"* with the gate *"oversell seen"* (p.36). Nothing more is specified. T6 runs T1–T3 against the baseline, and T1 is reserved seating (*5,000 concurrent buyers on the same 500 seats*). GA contention (T7) belongs to phase 3. The real `booking_db` schema (p.17–21) has `one_live_ticket_per_seat`, `bookings.hold_id UNIQUE` and seat `CHECK`s, which would block the oversell, and invariant 4 forbids weakening them ([ADR-034](../../ARCHITECTURE_DECISIONS.md#adr-034)). CLAUDE.md said the schema starts in phase 3 with `goose`.
+**Questions and options.**
+1. *Inventory:* (a) reserved seats only (matches T1); (b) seats and GA.
+2. *Tables:* (a) separate baseline tables (e.g. seats + bookings with no seat uniqueness) in `booking_db` under their own Postgres schema (e.g. `baseline`); (b) a separate `baseline_db` with its own role (one more database in the Compose init script); (c) another arrangement.
+3. *Migrations:* (a) introduce `goose` now for the baseline tables only; (b) a plain SQL file applied by the seed/reset command; (c) created by the test harness only.
+4. *Dataset:* one event and *N* seats, with *N* from AMB-43. Seat ids, sections, prices (integer paise) or none.
+
+<a id="amb-39"></a>
+## AMB-39 — Naive baseline: request contract · M · 🟡
+
+**Evidence.** The real hold endpoint is `POST /v1/events/{eventID}/holds` and needs an access token from the waiting room (p.25). Identity and JWT verification arrive in phase 4, the waiting room in phase 5. Invariant 7 requires an `Idempotency-Key` on state-changing endpoints. For T6 the k6 profile must be identical for the baseline and SurgeTix (p.34).
+**Questions and options.**
+1. *Route:* (a) the same path and body shape as `POST /v1/events/{eventID}/holds` with `{seat_ids}`, so the k6 profile carries over; (b) a separate path (e.g. under `/v1/baseline/…`).
+2. *Semantics:* (a) a final booking (true check-then-book); (b) a hold with an expiry, as in SurgeTix.
+3. *User identity:* (a) an unauthenticated user id supplied by k6 (e.g. a header); (b) no user at all; (c) wait for Identity (phase 4).
+4. *Idempotency:* (a) no `Idempotency-Key`; (b) accepted and ignored.
+5. *Responses:* `201` booked and `409` not available, or other codes. RFC 9457 error bodies (p.24) or not.
+
+<a id="amb-40"></a>
+## AMB-40 — Naive baseline: Gateway → Booking transport before gRPC · M · 🟡
+
+**Evidence.** Option B routes the request through the Gateway ([ADR-034](../../ARCHITECTURE_DECISIONS.md#adr-034)). Internal calls are gRPC + `buf` (p.13, p.27), but gRPC, `booking.v1` and the Gateway's routing belong to phase 4 (*"Services and gRPC"*, p.36), and ADR-022 proves the core before services are split.
+**Options.** (a) Phase 2 Gateway is an HTTP reverse proxy to Booking's HTTP port; phase 4 replaces it with gRPC. (b) Bring gRPC, `buf` and a minimal `booking.v1` call forward to phase 2. (c) k6 calls Booking directly in phase 2, and the Gateway joins the path in phase 4.
+**Note.** Whichever is chosen, the final T6 comparison must run both builds through the same topology ([ADR-034](../../ARCHITECTURE_DECISIONS.md#adr-034)).
+
+<a id="amb-41"></a>
+## AMB-41 — Naive baseline: isolating the unsafe path · H · 🟡
+
+**Evidence.** The owner requires the unsafe path to be used only for testing and benchmarking ([ADR-034](../../ARCHITECTURE_DECISIONS.md#adr-034)). ADR-033 puts business code in `internal/<service>/`. ADR-021 forbids adding services. [AMB-34](#amb-34) left open where the baseline, k6 scripts and generated results live. CLAUDE.md P6 forbids committing generated data directories.
+**Questions and options.**
+1. *Guard:* (a) a Go build tag (e.g. `baseline`), so default builds do not contain the code; (b) a runtime setting (e.g. `BOOKING_MODE=naive`), off by default, logged loudly at start-up; (c) both; (d) a separate binary (e.g. `cmd/booking-baseline`), to be checked against ADR-021.
+2. *Code location:* e.g. `internal/booking/naive`, or elsewhere.
+3. *k6 scripts:* e.g. `loadtest/k6/`, or elsewhere.
+4. *Results:* (a) commit small k6 summary JSON and audit output as evidence; (b) keep raw output out of git and transcribe results into the docs only.
+
+<a id="amb-42"></a>
+## AMB-42 — Phase 2 metrics: no Prometheus/Grafana exists yet · M · 🟡
+
+**Evidence.** Phase 1 has no Prometheus, Grafana or `/metrics` endpoint ([`PROGRESS.md`](../../PROGRESS.md)). The PDF puts *"Grafana, tracing, audit"* in phase 8 (p.36) and names Prometheus and Grafana in the stack (p.15). The PDF's domain metrics include `holds_total{mode,result}`, `seats_remaining` and `double_booked_seats` (p.34). The Phase 2 plan needs request, outcome, inventory, oversell, latency and error signals. Services run on the host, so `docker stats` covers only the infrastructure containers.
+**Options.** (a) Add `/metrics` with `prometheus/client_golang`, plus Prometheus and Grafana containers in Compose, now (a new Go dependency and two containers; needs an ADR). (b) `/metrics` only, no Prometheus or Grafana until phase 8. (c) No service metrics in phase 2: k6's own summary for throughput, latency and errors, the audit SQL for oversell, and OS or Go runtime counters for CPU and memory.
+**Also open.** Whether baseline metrics reuse the PDF names with a label marking the build, or use separate names.
+
+<a id="amb-43"></a>
+## AMB-43 — T6 scope, scale and environment in phase 2 · M · 🟡
+
+**Evidence.** T6 is *"T1–T3 against the naive build with the same k6 profile"* (p.35). T2 needs the waiting room (phase 5) and T3 needs checkout and payment (phase 6), which do not exist yet. T1 is 5,000 concurrent buyers on 500 seats, run 100 times. The PDF expects k6 on 2–3 cloud VMs ([OQ-6](open-questions.md)). The development machine is an Intel i5-1235U (12 logical CPUs) with 7.7 GB RAM, on Windows 11 with Docker Desktop. k6 is not installed there.
+**Questions and options.**
+1. *Scope:* (a) Phase 2 runs the T1-shaped baseline only, and the T2/T3 baselines run when those phases exist; (b) another split.
+2. *Scale:* (a) the full T1 scale locally, with the machine recorded; (b) scaled down, with the scale recorded; (c) cloud VMs (OQ-6).
+3. *Repetitions:* 100 runs as T1 states, or fewer for the baseline.
+4. *k6:* (a) the `grafana/k6` Docker image at a pinned version; (b) a local install.
+5. *Matrix:* the arrival rates, inventory sizes and durations (the PDF gives none beyond T1).
+6. *Co-location:* accept k6 on the same machine as the system under test and record it, or not.
 
 ---
 

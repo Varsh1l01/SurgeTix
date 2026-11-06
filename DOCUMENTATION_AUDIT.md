@@ -42,6 +42,19 @@
 | Secrets, credentials, emails, keys | **None found** |
 | Ignored or OS-junk files present | **None** |
 
+### Re-run 2026-11-06 (Phase 2 planning change: OQ-7 → ADR-034, AMB-38 … AMB-43, phase 2 plan)
+
+| Check | Result |
+|---|---|
+| Markdown files scanned | **49** (adds `docs/10-planning/phase-2-naive-baseline.md`) |
+| Broken relative links / anchors | **0 / 0** |
+| `AMB` / `ADR` references undefined | **0** (43 AMB, 34 ADR defined) |
+| Mermaid diagrams | **27 / 28 parse** with mermaid 11.4.1 + jsdom. Both new diagrams parse. The one failure is the state diagram in `03-services/waiting-room.md`, **unchanged since phase 0**, which passed the earlier run. It may be a parser-version difference (labels such as `Lua#1`) and needs a follow-up |
+| Sequence diagrams containing `;` | **0** |
+| DDL in `postgres-schema.md` | **Unchanged** (only a note added outside the SQL) |
+| New doc has a `Source:` line, citations within p.1–37 | ✅ |
+| Files changed | Markdown only. No code, secrets or generated files |
+
 ## 3. Coverage matrix: review areas
 
 | Review area | Where it is covered | Status |

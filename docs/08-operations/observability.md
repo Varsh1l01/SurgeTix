@@ -16,6 +16,8 @@
 
 Rejected: ELK (heavy on memory), Datadog/New Relic (paid).
 
+**Current state (2026-11-06):** none of this stack exists in the repository yet. Phase 1 has no `/metrics` endpoint. Whether phase 2 adds metrics, Prometheus or Grafana for the baseline is open ([AMB-42](../10-planning/ambiguities.md#amb-42)).
+
 ## Metrics
 
 ### RED per service

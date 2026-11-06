@@ -3,7 +3,7 @@
 *Tracks status against the 9-phase build plan (PDF p.36) plus phase 0 (documentation). A phase moves on **only when its gate passes** (PDF p.37).*
 
 **Last updated:** 2026-11-06
-**Current phase:** **2 — Naive baseline** → status: **Not started, blocked by [OQ-7](docs/10-planning/open-questions.md)**. Phase 1 gate passed on 2026-11-06
+**Current phase:** **2 — Naive baseline** → status: **Planning. OQ-7 decided ([ADR-034](ARCHITECTURE_DECISIONS.md#adr-034)). Implementation not started, waiting for owner approval of the [plan](docs/10-planning/phase-2-naive-baseline.md) and AMB-38 … AMB-43**. Phase 1 gate passed on 2026-11-06
 
 ## Phase status
 
@@ -11,7 +11,7 @@
 |---|---|---|---|---|---|
 | 0 | **Documentation** (not in PDF) | — | Owner approves docs + ambiguities register | 🟢 Approved 2026-11-06 (owner started Phase 1) | [DOCUMENTATION_AUDIT.md](DOCUMENTATION_AUDIT.md) |
 | 1 | Foundations | Week 1 | CI green | 🟢 Gate passed 2026-11-06. Merged to `develop` (PR #1) | [Phase 1 report](#phase-1--foundations), CI run [42148048247](https://github.com/Varsh1l01/SurgeTix/actions/runs/42148048247) |
-| 2 | Naive baseline | Week 2 | Oversell seen | ⚪ Not started (blocked by OQ-7) | — |
+| 2 | Naive baseline | Week 2 | Oversell seen | 🔵 Planning (OQ-7 decided; no code yet) | [Phase 2 plan](docs/10-planning/phase-2-naive-baseline.md) |
 | 3 | Booking core | Weeks 3–4 | T1, T7, T8 pass | ⚪ Not started | — |
 | 4 | Services and gRPC | Week 5 | e2e hold works | ⚪ Not started | — |
 | 5 | Waiting room | Week 6 | T2, T10, T13 pass | ⚪ Not started | — |
@@ -97,6 +97,17 @@ Legend: ⚪ not started · 🔵 in progress · 🟡 awaiting approval · 🟢 ga
 - Local Postgres has no standby, and Redis is a single node (AMB-20 remains open for Kubernetes).
 - While investigating Docker, `wsl --update` upgraded WSL from 2.6.3 to 3.0.3 on this machine. That was unplanned. Docker Desktop (Engine 29.2.1) later started working.
 
+## Phase 2 — Naive baseline
+
+**Gate:** oversell seen (PDF p.36), plus the owner's nine acceptance criteria. **Status:** 🔵 planning.
+
+| Item | State |
+|---|---|
+| Shape | ✅ OQ-7 → Option B, the same seven components without protections ([ADR-034](ARCHITECTURE_DECISIONS.md#adr-034)) |
+| Plan | [docs/10-planning/phase-2-naive-baseline.md](docs/10-planning/phase-2-naive-baseline.md) |
+| Open, blocking code | [AMB-38](docs/10-planning/ambiguities.md#amb-38) tables · [AMB-39](docs/10-planning/ambiguities.md#amb-39) contract · [AMB-40](docs/10-planning/ambiguities.md#amb-40) transport · [AMB-41](docs/10-planning/ambiguities.md#amb-41) isolation · [AMB-42](docs/10-planning/ambiguities.md#amb-42) metrics · [AMB-43](docs/10-planning/ambiguities.md#amb-43) T6 scope and scale |
+| Application code | **None.** No tests, benchmarks or oversell results exist yet |
+
 ## Decisions needed before phase 1 (historical, see decision log)
 
 | ID | Why it blocks |
@@ -104,7 +115,7 @@ Legend: ⚪ not started · 🔵 in progress · 🟡 awaiting approval · 🟢 ga
 | Approval of the doc set | Phase 0 gate |
 | [OQ-3](docs/10-planning/open-questions.md) / [AMB-36](docs/10-planning/ambiguities.md#amb-36) | Data-access tooling chosen in Foundations |
 | [AMB-34](docs/10-planning/ambiguities.md#amb-34) | Repository / module layout needed for the skeleton |
-| [OQ-7](docs/10-planning/open-questions.md) | Shape of the naive baseline (phase 2) |
+| [OQ-7](docs/10-planning/open-questions.md) | Shape of the naive baseline (phase 2). ✅ Decided 2026-11-06 ([ADR-034](ARCHITECTURE_DECISIONS.md#adr-034)) |
 | [AMB-20](docs/10-planning/ambiguities.md#amb-20) | Redis topology for Compose |
 | [AMB-01](docs/10-planning/ambiguities.md#amb-01) | PDF file name, ideally fixed before the first commit |
 
@@ -118,6 +129,8 @@ High-severity ambiguities to settle before their phases: [AMB-04](docs/10-planni
 | 2026-11-06 | AMB-34 | Single-module Go monorepo, `cmd/<service>` + `internal/platform` ([ADR-033](ARCHITECTURE_DECISIONS.md#adr-033)) | Owner |
 | 2026-11-06 | Local ports | Non-default host ports to avoid clashes: Postgres 15432, Redis 16379, Kafka 29092, services 18080–18086 (`compose.yaml`, `.env.example`, `README.md`, `cmd/*`) | Owner |
 | 2026-11-06 | Phase 1 | Gate passed (CI run 42148048247 green). PR #1 merged into `develop`. Phase 1 approved | Owner |
+| 2026-11-06 | OQ-7 | Option B: the naive baseline is the same seven components without protections, for testing and benchmarking only ([ADR-034](ARCHITECTURE_DECISIONS.md#adr-034)) | Owner |
+| 2026-11-06 | Phase 2 acceptance criteria | Nine criteria in addition to the PDF gate "oversell seen" ([TASKS.md](TASKS.md#phase-2--naive-baseline-week-2--gate-oversell-seen--current-planning)) | Owner |
 | 2026-11-06 | `.gitignore` | Added `bin/`, `*.out`, `*.prof`, `*.pprof`, `desktop.ini`, `kubeconfig*`, `.claude/settings.local.json` | Owner |
 
 ## Change log
@@ -128,4 +141,5 @@ High-severity ambiguities to settle before their phases: [AMB-04](docs/10-planni
 | 2026-11-06 | Phase 1 Foundations implemented (service skeletons, platform packages, Compose, CI). See the Phase 1 section |
 | 2026-11-06 | Phase 1 re-verification: Docker available, integration tests pass, Compose stack healthy on the new host ports, all 7 services ready end to end |
 | 2026-11-06 | Phase 1 gate recorded as passed (CI green, PR #1 merged into `develop`). Current phase moved to 2, blocked by OQ-7 |
+| 2026-11-06 | Phase 2 planning: OQ-7 recorded as ADR-034, plan written, AMB-38 … AMB-43 logged, P2-6 … P2-15 added. No application code |
 | 2026-11-06 | Final pre-commit review: fixed 4 Mermaid parse errors and 4 inaccurate statements, restructured CLAUDE.md into permanent and phase rules, added ARCHITECTURE_REVIEW.md, refreshed DOCUMENTATION_AUDIT.md |

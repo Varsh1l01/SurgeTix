@@ -22,7 +22,7 @@ Legend: ☐ to do · ☑ done · ⛔ blocked
 | P0-4a | Final pre-commit review: Mermaid parse, DDL diff, entity cross-check, secrets/.gitignore check; create `ARCHITECTURE_REVIEW.md` | ☑ |
 | P0-5 | **Owner:** review the doc set | ☑ (approved 2026-11-06) |
 | P0-6 | **Owner:** decide the ambiguities in the [register](docs/10-planning/ambiguities.md), at least those blocking phases 1–3 (prioritised in [ARCHITECTURE_REVIEW.md](ARCHITECTURE_REVIEW.md) §2) | ☐ |
-| P0-7 | **Owner:** decide OQ-3 and OQ-7 | ☐ |
+| P0-7 | **Owner:** decide OQ-3 and OQ-7 | ◐ OQ-7 decided 2026-11-06 ([ADR-034](ARCHITECTURE_DECISIONS.md#adr-034)); OQ-3 open |
 | P0-8 | Propagate approved decisions into docs and ADRs; log them in PROGRESS | ☐ (after P0-5…7) |
 | P0-9 | **Owner:** decide AMB-01 (PDF file name) and approve the initial documentation commit | ☐ |
 
@@ -44,15 +44,29 @@ Legend: ☐ to do · ☑ done · ⛔ blocked
 
 ---
 
-## Phase 2 — Naive baseline (Week 2) · Gate: **oversell seen** · current, blocked by OQ-7
+## Phase 2 — Naive baseline (Week 2) · Gate: **oversell seen** · current (planning)
+
+Plan: [phase-2-naive-baseline](docs/10-planning/phase-2-naive-baseline.md) · Decision: [ADR-034](ARCHITECTURE_DECISIONS.md#adr-034). **No application code until P2-6 is done and the owner approves the plan.**
 
 | ID | Task | Depends on |
 |---|---|---|
-| P2-1 | Decide the baseline shape (monolith vs services without waiting room/atomic holds) | ⛔ [OQ-7](docs/10-planning/open-questions.md) |
-| P2-2 | Implement check-then-book (deliberately non-atomic) | P2-1 |
-| P2-3 | k6 baseline scenarios, kept identical for T6 later | P2-2 |
-| P2-4 | Audit queries `double_booked_seats` / `oversold_ga` | — |
-| P2-5 | Run, record and archive the baseline oversell evidence | P2-3, P2-4 |
+| P2-1 | Decide the baseline shape (monolith vs services without waiting room/atomic holds) | ☑ Option B, 2026-11-06 ([ADR-034](ARCHITECTURE_DECISIONS.md#adr-034)) |
+| P2-2 | Implement check-then-book (deliberately non-atomic): naive repository with CHECK and BOOK SQL, explicit `READ COMMITTED`, nil-by-default checkpoint between them | P2-7 |
+| P2-3 | k6 baseline scenarios (arrival-rate), kept identical for T6 later, plus the reset → run → audit wrapper | P2-10, ⛔ [AMB-43](docs/10-planning/ambiguities.md#amb-43) |
+| P2-4 | Audit queries over the baseline tables: double-booked seats, excess bookings (and oversold GA if in scope) | P2-7 |
+| P2-5 | Run, record and archive the baseline oversell evidence | P2-3, P2-4, P2-12 |
+| P2-6 | **Owner:** approve the phase 2 plan and decide AMB-38 … AMB-43 | ⛔ [AMB-38](docs/10-planning/ambiguities.md#amb-38), [AMB-39](docs/10-planning/ambiguities.md#amb-39), [AMB-40](docs/10-planning/ambiguities.md#amb-40), [AMB-41](docs/10-planning/ambiguities.md#amb-41), [AMB-42](docs/10-planning/ambiguities.md#amb-42), [AMB-43](docs/10-planning/ambiguities.md#amb-43) |
+| P2-7 | Baseline tables, seed and reset command (separate from the real schema) | ⛔ [AMB-38](docs/10-planning/ambiguities.md#amb-38) |
+| P2-8 | Deterministic concurrency tests on real Postgres (barrier): 2 on 1 seat, *k* on 1 seat, demand ≫ inventory, overlapping multi-seat, sequential control, isolation-level assertion; pass `-race` | P2-2 |
+| P2-9 | Booking HTTP endpoint for the baseline, behind the isolation guard (off by default) | P2-2, ⛔ [AMB-39](docs/10-planning/ambiguities.md#amb-39), [AMB-41](docs/10-planning/ambiguities.md#amb-41) |
+| P2-10 | Gateway routing to Booking, plus an end-to-end test against Compose | P2-9, ⛔ [AMB-40](docs/10-planning/ambiguities.md#amb-40) |
+| P2-11 | Baseline metrics: requests, outcomes, inventory, oversell, latency, errors | ⛔ [AMB-42](docs/10-planning/ambiguities.md#amb-42) |
+| P2-12 | Benchmark matrix: inventory sizes × arrival rates, repeated runs, environment captured with each result | P2-3, ⛔ [AMB-43](docs/10-planning/ambiguities.md#amb-43) |
+| P2-13 | Document architecture, method and **measured** results (plan §8); no estimated numbers | P2-5 |
+| P2-14 | Regression: Phase 1 checks, Compose health, `/healthz` + `/readyz` for all 7 services, CI green on the PR | P2-10 |
+| P2-15 | **Owner:** gate review: oversell seen + the 9 acceptance criteria | P2-13, P2-14 |
+
+**Acceptance criteria (owner, 2026-11-06).** Phase 2 is complete only when: (1) the naive flow works end to end · (2) the seven-service architecture is intact · (3) a reproducible concurrency test exists · (4) the oversell is demonstrated and documented with test evidence · (5) the k6 load tests run · (6) latency, throughput and error-rate metrics are recorded · (7) the results are reproducible · (8) the docs contain the architecture, method and measured results · (9) no Phase 1 function is broken. The PDF gate is **oversell seen**.
 
 ---
 

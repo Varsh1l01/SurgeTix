@@ -8,6 +8,8 @@
 
 Schemas for **Identity** (`users`, `credentials`, `oauth_accounts`, `signing_keys`) and **Catalog** (`events`, `venues`, `seat_layouts`) are **named but not specified** in the PDF. They are not reproduced here ([AMB-13](../10-planning/ambiguities.md#amb-13)).
 
+**Not in this schema:** the phase 2 naive baseline uses separate, deliberately unconstrained tables so that this schema's constraints are never weakened ([ADR-034](../../ARCHITECTURE_DECISIONS.md#adr-034)). Their shape and location are open ([AMB-38](../10-planning/ambiguities.md#amb-38)).
+
 ---
 
 ## booking_db

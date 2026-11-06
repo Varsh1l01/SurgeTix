@@ -35,8 +35,9 @@ From [goals-and-success-metrics](../00-overview/goals-and-success-metrics.md#suc
 ## The naive baseline
 
 - Built in **phase 2** as **"check-then-book"**; its gate is **"oversell seen"** (p.36). The baseline must visibly fail.
-- Its shape is an open question: a single **monolith** (simplest) or **the same services without the waiting room and atomic holds** (fairer comparison) ([OQ-7](../10-planning/open-questions.md)).
-- T6 runs T1–T3 against it with the identical k6 profile.
+- **Shape decided (2026-11-06):** the same seven components **without protections** ([ADR-034](../../ARCHITECTURE_DECISIONS.md#adr-034), resolves [OQ-7](../10-planning/open-questions.md)).
+- T6 runs T1–T3 against it with the identical k6 profile. Which parts of T6 run in phase 2, and at what scale, is open ([AMB-43](../10-planning/ambiguities.md#amb-43)).
+- **Method** ([phase 2 plan](../10-planning/phase-2-naive-baseline.md)): the oversell is first proven by **deterministic** integration tests on real Postgres. A barrier between CHECK and BOOK forces every buyer past the check, so the counts are exact. k6 runs then measure it under load, and the baseline audit runs after every run. No results exist yet.
 
 ## Deliverable (p.36)
 
