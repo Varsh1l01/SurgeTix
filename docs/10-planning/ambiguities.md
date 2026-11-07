@@ -14,14 +14,14 @@
 |---|---|---|---|---|
 | [AMB-01](#amb-01) | Source document revision / file name | L | — | 🟡 |
 | [AMB-02](#amb-02) | No explicit documentation spec; FR → phase and test gaps | M | 0 | 🟡 |
-| [AMB-03](#amb-03) | Kafka topic names: diagram vs table | M | 4 | 🟡 |
+| [AMB-03](#amb-03) | Kafka topic names: diagram vs table | M | 4 | ✅ 2026-11-06 (ADR-036) |
 | [AMB-04](#amb-04) | Order and refund state-machine gaps | **H** | 6–7 | 🟡 |
 | [AMB-05](#amb-05) | `EVENT_CANCELLED` refunds have no flow or API | M | 7 | 🟡 |
 | [AMB-06](#amb-06) | GA partial cancellation: which bucket is restored | **H** | 7 | 🟡 |
 | [AMB-07](#amb-07) | Second-chance offer mechanics | **H** | 7 | 🟡 |
 | [AMB-08](#amb-08) | Who serves SSE seat-map deltas | M | 8 | 🟡 |
-| [AMB-09](#amb-09) | "Price tier" has no data model | M | 3 | 🟡 |
-| [AMB-10](#amb-10) | Purchase limits: per hold, per user, per payment method | **H** | 3 / 5 | 🟡 |
+| [AMB-09](#amb-09) | "Price tier" has no data model | M | 3 | ✅ 2026-11-06 (ADR-036); tier data model before M4 |
+| [AMB-10](#amb-10) | Purchase limits: per hold, per user, per payment method | **H** | 3 / 5 | ✅ 2026-11-06 (ADR-036) |
 | [AMB-11](#amb-11) | Payment window length and the `FAILED` trigger | M | 6 | 🟡 |
 | [AMB-12](#amb-12) | Unspecified numeric parameters and wire formats | M | 3–6 | 🟡 |
 | [AMB-13](#amb-13) | Identity, Catalog, Waiting Room schemas not specified | M | 4 | 🟡 |
@@ -37,9 +37,9 @@
 | [AMB-23](#amb-23) | Event context in Checkout and Booking | M | 6–7 | 🟡 |
 | [AMB-24](#amb-24) | Google sign-in and email verification | L | 4 | 🟡 |
 | [AMB-25](#amb-25) | Saga states, step names, saga uniqueness | M | 6 | 🟡 |
-| [AMB-26](#amb-26) | "Nearby alternatives" and the no-adjacent-run case | L | 3 | 🟡 |
-| [AMB-27](#amb-27) | Hold transitions: release while `PAYMENT_PENDING` | M | 3 / 6 | 🟡 |
-| [AMB-28](#amb-28) | What counts as a "Postgres round trip per seat sold" | L | 3 | 🟡 |
+| [AMB-26](#amb-26) | "Nearby alternatives" and the no-adjacent-run case | L | 3 | ✅ 2026-11-06 (ADR-036); algorithm before M4 |
+| [AMB-27](#amb-27) | Hold transitions: release while `PAYMENT_PENDING` | M | 3 / 6 | ✅ 2026-11-06 (ADR-036) |
+| [AMB-28](#amb-28) | What counts as a "Postgres round trip per seat sold" | L | 3 | ✅ 2026-11-06 (ADR-036) |
 | [AMB-29](#amb-29) | "One Redis call per queue join" vs several operations | M | 5 | 🟡 |
 | [AMB-30](#amb-30) | Ticket transition edge cases | L | 7 | 🟡 |
 | [AMB-31](#amb-31) | FakePay API surface | M | 6 | 🟡 |
@@ -47,7 +47,7 @@
 | [AMB-33](#amb-33) | RPC retry rule vs saga retries | L | 6 | 🟡 |
 | [AMB-34](#amb-34) | Repository / code layout | M | 1 | ✅ 2026-11-06 (ADR-033) |
 | [AMB-35](#amb-35) | Admin control room: Grafana vs React | L | 8 | 🟡 |
-| [AMB-36](#amb-36) | OQ-3 vs Tech stack (`pgx + sqlc`) | L | 1 | 🟡 |
+| [AMB-36](#amb-36) | OQ-3 vs Tech stack (`pgx + sqlc`) | L | 1 | ✅ 2026-11-06 (ADR-036) |
 | [AMB-37](#amb-37) | "AuthPlatform" reference | L | — | 🟡 |
 | [AMB-38](#amb-38) | Naive baseline: inventory model, tables, migrations, dataset | **H** | 2 | ✅ 2026-11-06 (ADR-035) |
 | [AMB-39](#amb-39) | Naive baseline: request contract (route, identity, idempotency, codes) | M | 2 | ✅ 2026-11-06 (ADR-035) |
@@ -55,6 +55,17 @@
 | [AMB-41](#amb-41) | Naive baseline: isolating the unsafe path; code, k6 and results locations | **H** | 2 | ✅ 2026-11-06 (ADR-035) |
 | [AMB-42](#amb-42) | Phase 2 metrics: no Prometheus/Grafana exists yet | M | 2 | ✅ 2026-11-06 (ADR-035) |
 | [AMB-43](#amb-43) | T6 scope, scale and environment in phase 2 | M | 2 | ✅ 2026-11-06 (ADR-035) |
+| [AMB-44](#amb-44) | Phase 3 entry point, caller identity and k6 target before gRPC/JWT | **H** | 3 | ✅ 2026-11-06 (ADR-036) |
+| [AMB-45](#amb-45) | Inventory provisioning before Catalog; seat id format; GA bucket split | M | 3 | ✅ 2026-11-06 (ADR-036) |
+| [AMB-46](#amb-46) | Phase 3 gate scale: T1 and T7 on local hardware | **H** | 3 | ✅ 2026-11-06 (ADR-036) ⚠️ |
+| [AMB-47](#amb-47) | Outbox in phase 3: topic names, envelope, payload format | M | 3 | ✅ 2026-11-06 (ADR-036) |
+| [AMB-48](#amb-48) | Idempotency mechanics: transaction boundary, stale claims, stored outcomes, hashing, DELETE | M | 3 | ✅ 2026-11-06 (ADR-036) |
+| [AMB-49](#amb-49) | `seatbits` contents and maintenance vs inline reclaim | M | 3 | ✅ 2026-11-06 (ADR-036); implemented in Phase 3 M4 |
+| [AMB-50](#amb-50) | Inline reclaim of a partly reclaimed old hold | M | 3 | ✅ 2026-11-06 (ADR-036) ⚠️ |
+| [AMB-51](#amb-51) | Migration execution; creating phase 6–7 tables in phase 3 | L | 3 | ✅ 2026-11-06 (ADR-036) |
+| [AMB-52](#amb-52) | `SoldOut` emission condition | M | 3 (M4) | 🟡 |
+| [AMB-53](#amb-53) | GA ticket price source and hold-amount consistency | **H** | 3 (M3) | 🟡 |
+| [AMB-54](#amb-54) | Aggregate version on events: no mechanism in the schema or envelope v1 | M | 4 (before P4-5) | 🟡 |
 
 ---
 
@@ -72,11 +83,15 @@
 **Options.** (a) Approve the layout and mappings as documented. (b) Adjust the mappings. (c) Add test IDs (e.g. T14+) for the uncovered failures, or accept integration/e2e coverage.
 
 <a id="amb-03"></a>
-## AMB-03 — Kafka topic names: diagram vs table · M · 🟡
+## AMB-03 — Kafka topic names: diagram vs table · M · ✅ Approved 2026-11-06
 
 **Evidence.** The architecture diagram (p.10) labels Kafka *"booking.events and checkout.events"*. The topic table (p.24) defines `booking.holds`, `booking.inventory`, `booking.tickets` and `checkout.orders`, each with its own key and ordering.
 **Leaning.** The table, which carries the keys and ordering rules. The docs follow it.
 **Options.** (a) Table is authoritative; the diagram label is shorthand. (b) Two topics as in the diagram (this would lose per-entity keying).
+
+**✅ Decision (owner, 2026-11-06):** use the PDF's topic table names (option a). Booking's phase 3 events go to **`booking.holds`** (key `hold_id`) and **`booking.inventory`** (key `event_id:section`; `SoldOut` keyed by `event_id`). Event names are stable, and payloads are versioned JSON with event ids ([AMB-47](#amb-47)). [ADR-036](../../ARCHITECTURE_DECISIONS.md#adr-036) (amendment 2026-11-06)
+**Why.** The table carries the per-entity keys and ordering rules (p.24). The diagram's two-topic label would lose them.
+**Scope.** The decision names only the two Phase 3 topics. The table's other topics (`booking.tickets`, `checkout.orders`) follow the same table and are confirmed when their phases start (6–7).
 
 <a id="amb-04"></a>
 ## AMB-04 — Order and refund state-machine gaps · H · 🟡
@@ -120,16 +135,35 @@
 **Open.** Then what is `WatchSeats` for, and how does the Gateway route `/seats/stream` to a worker?
 
 <a id="amb-09"></a>
-## AMB-09 — "Price tier" has no data model · M · 🟡
+## AMB-09 — "Price tier" has no data model · M · ✅ Approved 2026-11-06 (tier mode scheduled in Phase 3 M4)
 
 **Evidence.** FR-2 lists *"price tiers"*, and best-available accepts *"section or tier"* (p.5, p.25). The `seats` table has only `price_paise` and no tier column (p.17).
 **Options.** (a) Tier = distinct `price_paise` value. (b) Add a `tier` column copied from Catalog's layout.
 
+**✅ Decision (owner, 2026-11-06):** section-based pricing initially. Best-available ships in **section** mode, and prices come from `seats.price_paise` exactly as in the PDF schema. [ADR-036](../../ARCHITECTURE_DECISIONS.md#adr-036)
+**Why.** The PDF schema has no tier column (p.17). Adding one would be a schema deviation needing its own ADR, and section mode exercises the same `SKIP LOCKED` + adjacency algorithm.
+**⚠️ Conflict to keep visible.** FR-7 (P0) says *"N seats in a section **or price tier**"* (p.5, p.25). Tier mode is **deferred, not dropped**: FR-7 is not complete until tier mode exists. The owner must schedule it (candidate: phase 4, when Catalog's price tiers from FR-2 exist).
+
+**✅ Follow-up decision (owner, 2026-11-06):** section-based pricing stays the **initial** implementation. **Tier pricing is a P0 requirement and stays in the Phase 3 completion criteria.** It is scheduled for **M4** ([phase 3 plan](phase-3-booking-core.md) §5.3, §14). [ADR-036](../../ARCHITECTURE_DECISIONS.md#adr-036) (amendment 2026-11-06)
+**Still to decide before M4:** the tier data model. Options:
+- (a) a tier is a distinct `price_paise` value (no schema change);
+- (b) a `tier` column copied from the layout (a schema deviation needing an ADR).
+
+Also whether a tier spans sections.
+
 <a id="amb-10"></a>
-## AMB-10 — Purchase limits · H · 🟡
+## AMB-10 — Purchase limits · H · ✅ Approved 2026-11-06
 
 **Evidence.** FR-6: holds of *"1–4 seats"*. FR-2: organizer sets a *"per-user limit"*. FR-18: *"purchase caps per account and payment method"*. Capacity: *"max 4 seats per buyer"* (p.8).
 **Unclear.** Is 4 a fixed system maximum or the default of the per-event limit? Is the cap per hold or cumulative per user across orders (and which service enforces cumulative caps across Booking and Checkout)? Does FakePay have a "payment method" identity to cap on? Does the limit apply to GA quantity too?
+
+**✅ Decision (owner, 2026-11-06):** minimum **1**, maximum **4** seats per hold, **enforced server-side** (never only in a client). Cumulative per-user and purchase limits are **deferred** to a later phase. [ADR-036](../../ARCHITECTURE_DECISIONS.md#adr-036)
+**Why.** FR-6 fixes *"1–4 seats"* per hold (p.5). The cumulative caps belong to features not yet built: the organiser's *"per-user limit"* comes from Catalog (FR-2, phase 4) and *"purchase caps per account and payment method"* from FR-18 (phase 5).
+**Applied to every mode (derived, confirm):** `len(seat_ids)`, `best_available.quantity` and `ga.quantity` must all be integers 1–4. This follows from the owner's required tests for zero, negative and > 4 quantities. Required tests: 0, negative, 5+, non-integer, and each valid value 1–4, per mode.
+
+**✅ Confirmed (owner, 2026-11-06):** the 1–4 limit applies to **all three modes**: reserved seats (`len(seat_ids)`), best-available (`quantity`) and GA (`quantity`). It is enforced server-side, and invalid quantities (0, negative, > 4, non-integer) are tested in every mode. Cumulative per-user caps stay deferred. [ADR-036](../../ARCHITECTURE_DECISIONS.md#adr-036) (amendment 2026-11-06)
+
+**✅ Confirmed (owner, 2026-11-06, M1-T7):** the quantity must be a plain JSON integer (`2.0`, `2e0`, fractions, strings, booleans and `null` are rejected). Section names are at most 16 bytes and seat ids at most 24 bytes, the limits of the T3 generator. These are **Phase 3 constraints**, to revisit when Catalog layouts are introduced in phase 4.
 
 <a id="amb-11"></a>
 ## AMB-11 — Payment window length and the `FAILED` trigger · M · 🟡
@@ -223,20 +257,34 @@ The PDF fixes many numbers (10-min hold, 15-min token, 5-s lease, 2-s expiry tic
 **Evidence.** `sagas.state` is free text (p.20). Only `CONFIRM_HOLD` and `SEND_REFUND` are named as steps. `UNIQUE (kind, order_id, saga_id)` contains the primary key and so constrains nothing beyond it, which means an order could have two `REFUND` sagas (needed for repeated partial cancellations?) or two `CHECKOUT` sagas.
 
 <a id="amb-26"></a>
-## AMB-26 — "Nearby alternatives" and the no-adjacent-run case · L · 🟡
+## AMB-26 — "Nearby alternatives" and the no-adjacent-run case · L · ✅ Approved 2026-11-06 (alternatives scheduled in Phase 3 M4)
 
 **Evidence.** A `409` lists *"suggested alternatives"* / *"nearby alternatives"* (p.4, p.29), but the algorithm is unspecified. For best-available, the behaviour when the 40 `SKIP LOCKED` candidates contain no run of N adjacent seats (retry? non-adjacent? 409?) is also unspecified.
 
+**✅ Decision (owner, 2026-11-06):** `409 Conflict` **lists the unavailable seats** but includes **no alternative-seat suggestions**. Best-available with no adjacent run of N among its candidates also returns `409`. [ADR-036](../../ARCHITECTURE_DECISIONS.md#adr-036)
+**Why.** The alternatives algorithm is unspecified, and keeping it out of the hold transaction keeps the correctness core minimal. Best-available already offers the PDF's other recovery, *"one tap for best-available"* (p.4).
+**⚠️ Deviation recorded.** The PDF says *"409 with nearby alternatives"* (p.4, an unhappy path that *"must feel clean"*) and *"409 listing unavailable seats with suggested alternatives"* (p.29). This is an approved deviation in ADR-036. Alternatives are deferred, not waived, and must be revisited before the full demo (phase 8).
+
+**✅ Follow-up decision (owner, 2026-11-06):** the **initial** conflict response stays `409` without suggestions (M1–M3). **Nearby alternatives are an explicit PDF requirement and stay in the Phase 3 completion criteria.** They are scheduled for **M4** (plan §11.4). They are computed read-only after rollback, are never held, and are stored with the deterministic `409`. [ADR-036](../../ARCHITECTURE_DECISIONS.md#adr-036) (amendment 2026-11-06)
+**Still to decide before M4:** the algorithm (e.g. up to *k* same-size runs in the same section ranked by distance, or one best-available suggestion), *k*, and the response shape.
+
 <a id="amb-27"></a>
-## AMB-27 — Hold transitions: release while `PAYMENT_PENDING` · M · 🟡
+## AMB-27 — Hold transitions: release while `PAYMENT_PENDING` · M · ✅ Approved 2026-11-06
 
 **Evidence.** `RELEASED` exists (p.18), and *"failures release seats"* (p.34). Not stated: whether `DELETE /holds/{id}` is allowed once checkout has started; whether a failed payment explicitly releases the hold or lets it expire; and the exact release transaction (assumed to mirror expiry).
 
+**✅ Decision (owner, 2026-11-06):** in phase 3 only **`ACTIVE`** holds are releasable. **Derived:** that means `status = 'ACTIVE' AND expires_at > now()`; an expired hold is left to expiry. Release of `PAYMENT_PENDING` holds is decided with checkout (phase 6). [ADR-036](../../ARCHITECTURE_DECISIONS.md#adr-036)
+**Why.** `PAYMENT_PENDING` exists only after `StartPayment` (phase 6). Deciding its release rules now would be speculative.
+
 <a id="amb-28"></a>
-## AMB-28 — What counts as a "Postgres round trip per seat sold" · L · 🟡
+## AMB-28 — What counts as a "Postgres round trip per seat sold" · L · ✅ Approved 2026-11-06
 
 **Evidence.** Target ≤ 4, *"hold through confirmation"* (p.3). Unclear: per seat or per order (2.5 seats/order); whether `checkout_db` trips count; whether idempotency-claim and outbox statements count separately or as one transaction round trip.
 **Added in final review.** Flow 3 (p.28–29) implies separate write transactions for the hold, `StartPayment`, the order insert, payment-saved, `ConfirmHold` and order → `CONFIRMED`. Counted naively that exceeds 4, so the counting rule decides whether the target is achievable ([ARCHITECTURE_REVIEW](../../ARCHITECTURE_REVIEW.md) I-9, R-2).
+
+**✅ Decision (owner, 2026-11-06):** measure **Booking database (`booking_db`) round trips per seat sold**, counted by a pgx query tracer. [ADR-036](../../ARCHITECTURE_DECISIONS.md#adr-036)
+**Why.** Booking is the service phase 3 builds. A tracer counts actual network round trips (a pgx batch counts once), not SQL statements.
+**Note.** The PDF target (≤ 4, *"hold through confirmation"*, p.3/p.8) can be fully evaluated only once confirmation exists (phase 6). Phase 3 reports the hold-path share.
 
 <a id="amb-29"></a>
 ## AMB-29 — "One Redis call per queue join" vs several operations · M · 🟡
@@ -279,10 +327,13 @@ Can a `CHECKED_IN` ticket be cancelled or refunded? Can a ticket with a pending 
 **Options.** (a) React page for the controls plus Grafana for the charts. (b) React page embeds Grafana. (c) Grafana only, with controls via the API.
 
 <a id="amb-36"></a>
-## AMB-36 — OQ-3 vs Tech stack (`pgx + sqlc`) · L · 🟡
+## AMB-36 — OQ-3 vs Tech stack (`pgx + sqlc`) · L · ✅ Approved 2026-11-06
 
 **Evidence.** The Tech stack names *"pgx + sqlc; goose migrations"* (p.14) as chosen. Open Questions (p.37) still asks the same question, with the proposal *"sqlc for CRUD, hand-written SQL for the hold, GA and refund paths"*.
 **Leaning.** The proposal is the decision (sqlc for CRUD and hand-written pgx SQL on hot paths); confirm to close OQ-3.
+
+**✅ Decision (owner, 2026-11-06):** **hand-written `pgx`** for every transactional booking path (holds, best-available, GA, release, expiry, idempotency, outbox). **`sqlc` later** for ordinary CRUD. Closes [OQ-3](open-questions.md). [ADR-036](../../ARCHITECTURE_DECISIONS.md#adr-036), [ADR-024](../../ARCHITECTURE_DECISIONS.md#adr-024)
+**Why.** These paths depend on exact SQL shape: CTEs with `ORDER BY … FOR UPDATE`, `SKIP LOCKED`, fenced conditional updates, rows-affected checks and pgx batching. This is also the PDF's own proposal (p.37).
 
 <a id="amb-37"></a>
 ## AMB-37 — "AuthPlatform" reference · L · 🟡
@@ -357,6 +408,193 @@ Can a `CHECKED_IN` ticket be cancelled or refunded? Can a ticket with a pending 
 6. *Co-location:* accept k6 on the same machine as the system under test and record it, or not.
 
 **✅ Decision (owner, 2026-11-06):** the T1-shaped booking scenario only. Local matrix of 50, 100 and 250 concurrent buyers, plus 500 only if the machine stays stable, each run three times with a warm-up. The 5,000-buyer T1 scale is a future distributed run on 2–3 cloud load generators and is not forced onto the laptop. T6 runs when the waiting room and checkout exist. The baseline must be **unprotected but not sabotaged**: no sleeps, no reduced pools, no restricted CPU or memory, comparable settings, and the environment recorded. [ADR-035](../../ARCHITECTURE_DECISIONS.md#adr-035)
+
+<a id="amb-44"></a>
+## AMB-44 — Phase 3 entry point, caller identity and k6 target · H · ✅ Approved 2026-11-06
+
+**Evidence.** T1, T7 and T8 are k6 tests (p.35), so Phase 3 needs an HTTP way in. The public hold route sits behind the Gateway with an access token (p.25, p.28). gRPC, JWT/JWKS and Gateway routing are phase 4, and access tokens are phase 5 (p.36). `holds.user_id UUID NOT NULL` and the idempotency scope `(scope, user_id, key)` both need a user. The phase 2 baseline route is served on Booking's port and was benchmarked through the Gateway ([ADR-035](../../ARCHITECTURE_DECISIONS.md#adr-035)).
+**Questions and options.**
+1. *Entry point:* (a) Booking serves `POST /v1/events/{eventID}/holds` and `DELETE /v1/holds/{holdID}` on its internal HTTP port, with phase 4 putting the Gateway (JWT → gRPC) in front; (b) a Gateway HTTP proxy as in phase 2; (c) bring gRPC forward.
+2. *Identity:* (a) Booking trusts a user-id header on its internal port, phase 3 only; (b) the same, gated by a dev flag; (c) wait for JWT (phase 4).
+3. *k6 target for the Phase 2 comparison:* (a) Booking directly for both builds (the baseline route also answers there); (b) through the Gateway for both.
+
+**✅ Decision (owner, 2026-11-06):** **internal HTTP** on Booking's own port, with a **phase-3-only identity header**. **This shortcut must never be exposed publicly.** [ADR-036](../../ARCHITECTURE_DECISIONS.md#adr-036)
+**Why.** It enables the k6 gate tests (T1/T7/T8) before gRPC/JWT (phase 4) and access tokens (phase 5) without pulling them forward.
+**Guard (proposed, reviewed in M2):** the header is honoured only when `BOOKING_PHASE3_TRUSTED_IDENTITY=true` (default `false`) **and** Booking's listen address is a loopback address. Booking refuses to start if the flag is set with a non-loopback address. The header and flag are removed in phase 4, when identity comes from verified JWT claims.
+**Still open:** the k6 target for the Phase 2 comparison. Proposed: Booking directly, for both builds.
+
+**✅ Sub-question resolved (owner, 2026-11-06):** the k6 comparison targets **Booking directly for both** the baseline and the protected implementation. [ADR-036](../../ARCHITECTURE_DECISIONS.md#adr-036) (amendment 2026-11-06)
+
+<a id="amb-45"></a>
+## AMB-45 — Inventory provisioning before Catalog; seat id format; GA bucket split · M · ✅ Approved 2026-11-06
+
+**Evidence.** *"Catalog's `seat_layouts` … copied into Booking's `seats` when a sale is published"* (p.22), but Catalog arrives in phase 4. `seats.seat_id` is `TEXT`, with the only example `'A-12'` (p.17). `ga_buckets` has 32 buckets per section (p.17, p.29), but how a section's capacity is divided among them is not stated. T7 needs *"fragmented stock (no single bucket can fill a 4-ticket order)"* and a 1-bucket comparison.
+**Questions and options.**
+1. *Mechanism:* (a) an internal Booking operation (e.g. `LoadInventory`) that phase 4's publish step will call; (b) a dev/test seed command or migration fixture only.
+2. *Seat id format:* (a) `'<section>-<row>-<number>'`; (b) the PDF's `'A-12'` style; (c) chosen by Catalog later.
+3. *Bucket split:* (a) even split, remainder to the lowest buckets; (b) another rule. Test layouts (fragmented, 1 bucket) are seeding parameters.
+4. *Seat ordinal* for a `seatbits` offset (see AMB-49).
+
+**✅ Decision (owner, 2026-11-06):** **generated seats** (a deterministic generator inside Booking, used by tests and benchmarks) and **evenly distributed GA buckets**. [ADR-036](../../ARCHITECTURE_DECISIONS.md#adr-036)
+**Why.** Catalog's publish step, which copies `seat_layouts` (p.22), arrives in phase 4. A generator gives reproducible layouts now, including T7's fragmented and 1-bucket variants as parameters.
+**Plan details (confirm in M1 review):**
+- **Bucket split:** `capacity` is divided evenly over the 32 buckets, with the remainder going one each to the lowest-numbered buckets. The 1-bucket variant uses bucket 0 only.
+- **Seat id format:** `'<section>-<row>-<number>'`, e.g. `'A-R01-01'`.
+- **Comparison layout:** matches the Phase 2 baseline (section A, R01–R20 × 25).
+
+**✅ Follow-up (owner, 2026-11-06, after T2):** **no database `CHECK`** on `ga_buckets.bucket`, so the PDF schema stays exact. The generator and `Load` enforce bucket numbers 0–31, with tests for valid and invalid values (implemented in M1-T3).
+
+<a id="amb-46"></a>
+## AMB-46 — Phase 3 gate scale: T1 and T7 on local hardware · H · ✅ Approved 2026-11-06 · ⚠️ depends on OQ-6
+
+**Evidence.** T1: *"5,000 concurrent buyers on the same 500 seats, run 100 times"*. T7: *"10,000 buyers on a 2,000-ticket GA section"* (p.35). Both are phase 3 gate tests (p.36). The PDF expects k6 on 2–3 cloud VMs (p.10, OQ-6). For phase 2 the owner made 5,000 buyers a future distributed run ([ADR-035](../../ARCHITECTURE_DECISIONS.md#adr-035)). The phase 2 local runs showed pool wait dominating at 250 buyers and 0.72 GB free RAM afterwards.
+**Questions and options.** (a) Run T1/T7 at full scale locally, accepting distortion. (b) Pass the gate on the deterministic suite plus scaled-down local k6 runs, with full scale on cloud VMs as a follow-up. (c) Run at full scale on cloud VMs before the gate (needs OQ-6). Also: is "run 100 times" required at the chosen scale?
+
+**✅ Decision (owner, 2026-11-06):** **deterministic local tests**, plus **full-scale T1/T7 on cloud VMs**. [ADR-036](../../ARCHITECTURE_DECISIONS.md#adr-036)
+**Why.** Phase 2 measured this laptop at its limits by 250 buyers (pool wait dominated, 0.72 GB RAM free). Correctness is proven deterministically, and scale needs separate load generators (p.10).
+**⚠️ Not a weakened gate.** The PDF gate stays: T1 (5,000 buyers × 100 runs) and T7 (10,000 buyers) must pass at full scale. Running on cloud VMs depends on [OQ-6](open-questions.md) (which VMs, what budget), which is still **open**. Phase 3 cannot be marked complete until OQ-6 is decided and those runs pass.
+
+**Update (owner, 2026-11-06):** OQ-6 (cloud VMs and budget) must be resolved before the full-scale cloud validation (M5). **It does not block M1–M4.** [ADR-036](../../ARCHITECTURE_DECISIONS.md#adr-036) (amendment 2026-11-06)
+
+<a id="amb-47"></a>
+## AMB-47 — Outbox in phase 3: topic names, envelope, payload format · M · ✅ Approved 2026-11-06
+
+**Evidence.** Every hold transaction ends with *"outbox events (HoldCreated on `booking.holds`, InventoryChanged per section)"* (p.28). `outbox.topic` and `outbox.payload BYTEA` are `NOT NULL` (p.21). Topic names are open ([AMB-03](#amb-03)), as are payload serialisation, the event envelope and trace context ([AMB-12](#amb-12)). The relay arrives in phase 4.
+**Options.** (a) Decide AMB-03 now (the p.24 table names) and a versioned JSON envelope (event id, type, version, occurred_at, aggregate key); (b) protobuf payloads, pulling `buf` forward; (c) write no outbox rows until phase 4 (contradicts p.28 and needs retrofitting).
+
+**✅ Decision (owner, 2026-11-06):** **versioned JSON** outbox payloads, with **stable event names** (the PDF's: `HoldCreated`, `InventoryChanged`, `HoldReleased`, `HoldExpired`, `InventoryReturned`) and **event ids** (`outbox.id`, a UUID, equal to the envelope's `event_id`). [ADR-036](../../ARCHITECTURE_DECISIONS.md#adr-036)
+**Why.** It is readable in tests and audits, needs no `buf` before phase 4, and versioning lets phase 4 evolve the format without breaking consumers.
+**⚠️ Dependency.** `outbox.topic` is `NOT NULL` (p.21), so the topic names must be decided. [AMB-03](#amb-03) is still open. The plan uses the p.24 table names (`booking.holds`, `booking.inventory`) **only if the owner approves AMB-03**. The outbox task in M1 is blocked until then.
+
+**Update (owner, 2026-11-06):** the dependency is cleared. [AMB-03](#amb-03) is approved with `booking.holds` and `booking.inventory`. [ADR-036](../../ARCHITECTURE_DECISIONS.md#adr-036) (amendment 2026-11-06)
+
+**Update (owner, 2026-11-06, M1-T6):**
+- **Scope.** T6 is the in-transaction insert helper only. The relay stays phase 4 (P4-5).
+- **Aggregate for inventory events.** `{"type":"section","id":"<event_id>:<section>"}`, equal to the p.24 partition key. Hold events use `{"type":"hold","id":"<hold_id>"}`.
+- **`occurred_at` format.** RFC 3339 in UTC with exactly six fractional digits (for example `2026-11-06T08:30:00.123456Z`), taken from the transaction's `now()`.
+- **Open gap.** The aggregate's version that p.24 requires is not in envelope v1. It is logged as [AMB-54](#amb-54) and not resolved here.
+
+<a id="amb-48"></a>
+## AMB-48 — Idempotency mechanics · M · ✅ Approved 2026-11-06 (incl. additive schema)
+
+**Evidence.** The claim semantics are specified (completed → stored response; in progress → 409; different body → 422, p.28). Not specified: whether the claim shares the hold's transaction (if it does, the `IN_PROGRESS` → 409 path never occurs); how an `IN_PROGRESS` row left by a crash is recovered (F8 says a retry with the same key is safe); whether non-201 outcomes (`409 unavailable`) are stored; how the request hash is computed; retention ([AMB-12](#amb-12)); and the semantics for `DELETE /v1/holds/{id}`.
+**Options.** (1) Claim in its own transaction and complete inside the hold transaction, or claim and hold in one transaction. (2) Stale claims re-claimable after a lease (duration?), or blocked until `expires_at`. (3) Store `409` outcomes or not. (4) Hash the raw body or canonical JSON. (5) Retention period. (6) A repeated DELETE returns the stored `204`, or `404`.
+
+**✅ Decision (owner, 2026-11-06):**
+- **30-second stale-claim lease.**
+- **Canonical JSON request hash.**
+- **Deterministic `409` outcomes are stored** and replayed.
+- **24-hour retention.**
+- **Mandatory claim generation (fencing token):** an old claimant must never overwrite, complete or interfere with a newer claim.
+
+[ADR-036](../../ARCHITECTURE_DECISIONS.md#adr-036)
+**Why.** The claim runs in its own short transaction so the PDF's `IN_PROGRESS → 409` path exists. Completion happens **inside** the business transaction as a fenced conditional update, so the stored response and the effect commit together (F8). A crash before commit therefore leaves only a claim that the lease releases. A crash after commit leaves a `COMPLETED` record that every retry replays.
+**⚠️ Schema deviation (needs explicit confirmation).** The PDF's `idempotency_keys` has no generation or lease column (p.21). Fencing needs two **additive** columns, `claim_generation BIGINT NOT NULL DEFAULT 1` and `claimed_at TIMESTAMPTZ NOT NULL DEFAULT now()`. No existing column or constraint changes. This is recorded in ADR-036 as an approved-design / pending-schema item.
+
+**✅ Schema confirmed (owner, 2026-11-06):** the two **additive** columns `claim_generation` and `claimed_at` may be added to `idempotency_keys` (migration 00004). Generation-based fencing ensures an old claimant can never overwrite, complete or delete a newer claimant's record. All PDF columns, the primary key and the `CHECK` are preserved. The deviation is documented in [ADR-036](../../ARCHITECTURE_DECISIONS.md#adr-036) (amendment 2026-11-06).
+
+<a id="amb-49"></a>
+## AMB-49 — `seatbits` contents and maintenance vs inline reclaim · M · ✅ Approved 2026-11-06 (in Phase 3, milestone M4)
+
+**Evidence.** `seatbits:{event}:{section}` *"rejects clearly taken seats before Postgres"* (p.23, p.28) and may only reject. The PDF does not say which states set a bit, who updates the bitmap, when (in or after the transaction), or how it is rebuilt. If HELD seats set bits, a hold that expired while the worker was stalled keeps its bits. The pre-filter then rejects the seat before inline reclaim can run, which defeats *"holds reclaim expired seats inline, so inventory is never stuck"* (p.33, F14).
+**Options.** (a) Bits mark BOOKED only (sold seats); (b) bits mark HELD and BOOKED, with expiry time checked or the filter bypassed when the worker lags; (c) defer `seatbits` until measurements show it is needed. Also: update after commit vs from outbox events; rebuild at start-up.
+
+**✅ Decision (owner, 2026-11-06):** **PostgreSQL is the only inventory truth**. **No cache or bitmap may ever prevent a valid inventory operation because of stale data.** `seatbits` is deferred in phase 3 *unless the PDF explicitly requires it*. Don't add complexity to the booking core. [ADR-036](../../ARCHITECTURE_DECISIONS.md#adr-036)
+**Why.** A HELD-marking bitmap can reject a seat that inline reclaim could take (breaking F14). The pre-filter is an optimisation, not a correctness mechanism, and F9 requires holds to work without it.
+**⚠️ Conflict, owner confirmation needed.** The PDF does describe it explicitly: flow 2 **step 3** *"Pre-filter: seatbits in Redis rejects seats already shown as taken"* (p.28), plus the key table (p.23) and F9 (p.33). It is **not** in the phase 3 scope line (p.36) and no FR or test requires it. By the owner's own rule it may count as "explicitly required". Options:
+- (a) formally defer it, as a deviation in ADR-036, to after Phase 3 measurements;
+- (b) implement a **BOOKED-only** bitmap (never stale for a reclaimable hold) as a final, optional Phase 3 milestone.
+
+Until decided, task P3-9 is ⛔.
+
+**✅ Follow-up decision (owner, 2026-11-06), which resolves the conflict:** the PDF includes `seatbits` in the hold flow, so it **stays in the Phase 3 requirements and acceptance criteria**. Implementation is sequenced to the later milestone **M4**. When implemented:
+- **booked-seats-only** bitmap semantics;
+- PostgreSQL stays the authoritative inventory source;
+- **stale bitmap data must never block a valid booking or reclamation.**
+
+[ADR-036](../../ARCHITECTURE_DECISIONS.md#adr-036) (amendment 2026-11-06)
+**Derived (plan §5.4):**
+- *Safety invariant:* bits ⊆ seats committed as `BOOKED`. Set after commit; cleared before commit.
+- *Phase 3 limitation:* nothing becomes `BOOKED` until `ConfirmHold` (phase 6), so in Phase 3 the pre-filter has no traffic effect. M4 proves the mechanism and its safety properties. Phases 6–7 must call the set and clear hooks.
+
+<a id="amb-50"></a>
+## AMB-50 — Inline reclaim of a partly reclaimed old hold · M · ✅ Approved 2026-11-06 · ⚠️ refines p.28 under contention
+
+**Evidence.** *"A seat reclaimed from an expired hold also marks that old hold EXPIRED in the same transaction"* (p.28). If the old hold had other seats that the new request did not take, they stay `HELD` under an `EXPIRED` hold. The expiry worker only claims `ACTIVE`/`PAYMENT_PENDING` holds (p.30), so it never returns them. They are reclaimable only by a later chosen-seats request, and best-available never sees them.
+**Options.** (a) In the same transaction, release the old hold's remaining seats as expiry would (and emit HoldExpired/InventoryReturned); (b) mark the old hold `EXPIRED` only when all its seats are reclaimed, leaving the rest to the worker; (c) leave as written.
+
+**✅ Decision (owner, 2026-11-06):** when a new hold reclaims only some seats of an expired hold, release **all of the old hold's remaining seats in the same transaction**, but **only seats still owned by the old hold** (`hold_id = old AND status = 'HELD'`). Never release a seat another hold has acquired. No orphaned `HELD` seats, and inventory stays consistent. [ADR-036](../../ARCHITECTURE_DECISIONS.md#adr-036)
+**Why.** Otherwise those seats stay `HELD` under an `EXPIRED` hold that the worker never scans (p.30).
+**Mechanism ([phase 3 plan](phase-3-booking-core.md) §8, §10):** the old hold row and its other seats are taken with `SKIP LOCKED` (deadlock-free). **Invariant:** a hold becomes `EXPIRED` only in a transaction that leaves it with **zero** `HELD` seats and **zero** unreleased GA allocations.
+**⚠️ Refinement of p.28.** The PDF says reclaim *"also marks that old hold EXPIRED in the same transaction"*. That holds unless one of the old hold's other seats is locked by a concurrent transaction at that moment. In that case the old hold stays `ACTIVE` (already past `expires_at`) and the expiry worker finishes it. A deterministic test proves it is finished.
+
+<a id="amb-51"></a>
+## AMB-51 — Migration execution; creating phase 6–7 tables in phase 3 · L · ✅ Approved 2026-11-06
+
+**Evidence.** goose is the migration tool (p.14, ADR-035). P3-1 asks for the `booking_db` schema *"exactly as in postgres-schema"*, which includes `bookings`, `tickets` and `ticket_transfers` (used from phase 6). Kubernetes runs ≥ 2 replicas per service (p.8). The phase 2 baseline migrates at start-up with its own version table.
+**Options.** (1) Run at Booking start-up with goose's Postgres session lock, or as a separate migration step/job. (2) Create the full schema in phase 3, or only the tables phase 3 uses.
+
+**✅ Decision (owner, 2026-11-06):** **goose** migrations with a **session-level lock** (Postgres advisory lock). A test must verify that **the same database session** holds the lock for the whole migration run. The full `booking_db` schema is created in phase 3 (P3-1). [ADR-036](../../ARCHITECTURE_DECISIONS.md#adr-036)
+**Why.** Kubernetes runs ≥ 2 Booking replicas (p.8). A session lock taken on one pooled connection but released or run on another would not exclude a second migrator.
+**Plan details:**
+- **When:** migrations run at Booking start-up, before the listener opens.
+- **Lock connection:** the lock is taken on one dedicated `*sql.Conn`, and the M1 test confirms goose runs every migration on that session.
+- **Version table:** goose's default, `goose_db_version`. The baseline's `baseline_goose_db_version` and `baseline` schema are untouched.
+
+
+<a id="amb-52"></a>
+## AMB-52 — `SoldOut` emission condition · M · 🟡
+
+**Evidence.** The topic table lists **SoldOut** on `booking.inventory`, keyed by `event_id`, consumed by the waiting room (p.24). The queue state carries `sold_out`, which *"flips"* on sell-out (p.27–28). No flow says which transaction emits `SoldOut`, what "sold out" means, or what happens when inventory returns. The owner requires the condition to be defined before the relevant outbox flow is implemented (2026-11-06).
+**Questions and options.**
+1. *Meaning:* (a) no `AVAILABLE` seats and no GA `remaining` left in the whole event (everything held or booked); (b) everything `BOOKED` (only possible from phase 6); (c) per section rather than per event.
+2. *Emitter:* the transaction that takes the last unit (hold, best-available, GA) emits it once, detected inside that transaction.
+3. *Inventory returning* (expiry, release, cancellation): no event, so `sold_out` stays true and returned stock goes to second chance (p.31); or a reverse event, which the PDF does not name.
+4. *Exactly once:* how to avoid duplicate `SoldOut` from concurrent last-unit transactions, e.g. a guarded flag row in `booking_db` (a schema addition needing an ADR) or consumer dedupe.
+
+<a id="amb-53"></a>
+## AMB-53 — GA ticket price source and hold-amount consistency · H · 🟡
+
+**Evidence (PDF).**
+- A GA hold returns `201 {hold_id, … allocation, expires_at, amount}` (p.29).
+- Checkout reads the hold's amount through `booking.v1.GetHold` ("amount, status", p.26–27) and stores `orders.amount_paise` (p.19). FakePay charges the order's amount.
+- Seat prices reach Booking as `seats.price_paise`, copied from Catalog's `seat_layouts` when a sale is published (p.22).
+- **GA has no price anywhere in `booking_db`.** `ga_buckets` has no price column, and `holds` stores no amount (p.17–18). Catalog's columns are unspecified ([AMB-13](#amb-13)).
+
+**Owner direction (2026-11-06):** do not add a price column to `ga_buckets`, and do not invent or hardcode a GA price. Keep T3 inventory generation independent of pricing. GA pricing is an **explicit dependency of GA holds (M3)**. Do not implement the integration now.
+
+**How "hold amount = amount charged" already works for seats (derived):** Booking computes a seat hold's amount inside the hold transaction from its own `seats.price_paise`, which Catalog copied at publish. `GetHold` recomputes it from the same rows (`hold_seats` → `seats`). Checkout takes the amount **from `GetHold`**, never from Catalog, and charges `orders.amount_paise`. The amount is consistent as long as Booking's price rows do not change while a hold is live. The PDF does not say whether prices may change after publish.
+
+**Options for GA (to decide before M3):**
+- (a) **Copy at publish, like seats.** `PublishSale` gives Booking each GA section's price, stored in Booking's own table (a new `ga_sections(event_id, section, price_paise)` table, a schema deviation needing an ADR; not a `ga_buckets` column). The hold and `GetHold` compute `Σ allocation quantity × section price` from Booking's own data. *Leaning.* It keeps the hold path free of synchronous cross-service calls (p.12: one Postgres transaction decides) and mirrors the seat design.
+- (b) **Snapshot the amount onto the hold.** An `amount_paise` column on `holds` (schema deviation), written in the hold transaction. `GetHold` returns the stored value. This also guarantees consistency if prices may change after publish. It can be combined with (a).
+- (c) **Ask Catalog at hold time** over gRPC. This puts a synchronous dependency on the hot path and needs Catalog prices to be immutable during a hold. Not recommended.
+- (d) **No amount for GA holds** until Catalog exists (phase 4). The hold response then deviates from p.29 temporarily.
+
+**Also to decide:** whether a published price may ever change (if yes, (b) is required for seats too), and whether GA pricing is per section or per tier ([AMB-09](#amb-09)).
+
+<a id="amb-54"></a>
+## AMB-54 — Aggregate version on events · M · 🟡
+
+**Evidence (PDF).**
+- p.24: every event carries a unique `event_id` **and the aggregate's version**, so consumers can drop duplicates and **ignore stale versions**. ADR-009 repeats this.
+- p.24: each topic is keyed by the entity whose event order matters. `booking.holds` is ordered per hold, and `booking.inventory` per section (`event_id:section`).
+- p.21: `outbox` has no version or sequence column. `holds` and `seats` have no version column. No row represents a section.
+- Envelope v1 ([AMB-47](#amb-47) ✅) has no version field. M1-T6 implements v1 as approved and leaves the version out.
+
+**Implications (derived).**
+- Consumers cannot tell a stale event from a newer one for the same aggregate. They can only deduplicate on `event_id`.
+- The relay has nothing exact to order a key's events by. `created_at` and `occurred_at` are the transaction's **start** time. A transaction that starts earlier can wait on a lock and commit later than a newer one, so two events for one section can carry times in the opposite order to their commits. Events written in one transaction share the same time.
+- **Phase 3 correctness is unaffected.** Postgres is the only inventory truth, and nothing publishes in Phase 3. The gap matters from the relay (P4-5) and the first consumer onward.
+
+**Options (none chosen).**
+- (a) **A version per aggregate.** Add a `version` column on `holds`, plus a section-level row for `booking.inventory`. Each is incremented under a lock the business transaction holds, and the envelope gains `aggregate.version`. This is a schema deviation that needs an ADR. A section row is a new lock in the §10 order, and it serialises every hold within a section.
+- (b) **A sequence per key, assigned when the event is written.** A counter row per outbox key, locked and incremented in the transaction, and a `seq` column on `outbox`. It needs an ADR. Its lock-order and per-section contention effects are the same as (a).
+- (c) **A global sequence** (e.g. `bigserial`) assigned at insert. Allocation order is not commit order, so the relay must handle gaps and late commits. It needs an ADR.
+- (d) **No version.** Consumers deduplicate on `event_id` only and reconcile from state. This weakens p.24 and needs an ADR.
+- **Also to decide:** whether adding the field changes `schema_version` (to 2) or is an additive change within v1.
+
+**Blocks.** P4-5 (outbox relay) and any consumer that relies on per-key ordering or stale-version rejection. Linked from [phase 3 plan §9](phase-3-booking-core.md#9-transactional-outbox-pdf-p24-p28-adr-amb-47), [kafka-topics](../04-data/kafka-topics.md#event-envelope-rules-p24) and [TASKS](../../TASKS.md) P4-5.
 
 ---
 

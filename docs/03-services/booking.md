@@ -11,7 +11,7 @@ Booking is the **correctness core for inventory and ticket ownership** (p.15). I
 - **Seat and GA inventory** (`seats`, `ga_buckets`)
 - **Holds**: specific seats, best-available, GA; 1–4 seats; **10 minutes**
 - **Best-available picker**: `SKIP LOCKED` candidate selection, adjacency in memory
-- **Expiry**: worker every 2 s plus inline reclaim
+- **Expiry**: worker every 2 s plus inline reclaim (phase 3 M1: `internal/booking/expiry`, started inside the Booking process; schema migrations run at start-up before the server listens)
 - **Payment hand-off**: `StartPayment` extends the hold for the payment window
 - **Confirmation**: `ConfirmHold`, idempotent by `order_id`
 - **Tickets and rotating QR secrets**

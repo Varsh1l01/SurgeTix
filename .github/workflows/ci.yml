@@ -1,4 +1,4 @@
-# Phase 1 gate: "CI green" (PDF p.36).
+# Phase 1 gate: "CI green" (PDF p.36). Phase 3 adds the baseline-frozen check.
 #
 #   checks       gofmt, go vet, unit tests with the race detector, build;
 #                normal AND unsafe_baseline builds, and proof that a normal
@@ -24,11 +24,24 @@ concurrency:
 jobs:
   checks:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
+
+      # Phase 3 (M1-T12, ADR-034/035): the Phase 2 baseline is frozen. Its
+      # paths must be byte-identical to develop; any change fails the build.
+      - name: Phase 2 baseline is frozen
+        run: |
+          set -f  # let git match the pathspecs, so deleted files are caught too
+          git fetch --no-tags --depth=1 origin develop:refs/remotes/origin/develop
+          paths="internal/booking/baseline internal/gateway/baseline cmd/*/baseline_* loadtest/k6/baseline-t1.js loadtest/baseline"
+          if ! git diff --exit-code --stat refs/remotes/origin/develop -- $paths; then
+            echo "The frozen Phase 2 baseline differs from develop (ADR-034/035)."; exit 1
+          fi
+          echo "baseline unchanged: $(git ls-files -- $paths | wc -l) files"
 
       - name: gofmt
         run: |
@@ -72,17 +85,19 @@ jobs:
   integration:
     needs: checks
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
       - name: integration tests (testcontainers, incl. unsafe baseline)
-        run: go test -race -count=1 -tags=integration,unsafe_baseline ./...
+        run: go test -race -count=1 -p 2 -timeout 10m -tags=integration,unsafe_baseline ./...
 
   compose:
     needs: checks
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
       - name: create .env from the example

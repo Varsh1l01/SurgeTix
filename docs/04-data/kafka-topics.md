@@ -15,11 +15,11 @@ Apache Kafka in **KRaft mode**, client **`franz-go`**. **1 broker locally, 3 on 
 | `booking.tickets` | `ticket_id` | TicketsIssued, TicketCancelled, TicketTransferred, TicketCheckedIn | Ticket | Notifier, analytics |
 | `checkout.orders` | `order_id` | OrderCreated, PaymentSucceeded, PaymentFailed, OrderConfirmed, RefundRequested, RefundIssued, RefundFailed | Order | Notifier, analytics (**sagas call Booking directly**) |
 
-> The architecture diagram (p.10) instead labels the Kafka bus *"booking.events and checkout.events"*. This document follows the **topic table** above ([AMB-03](../10-planning/ambiguities.md#amb-03)).
+> The architecture diagram (p.10) instead labels the Kafka bus *"booking.events and checkout.events"*. This document follows the **topic table** above ([AMB-03](../10-planning/ambiguities.md#amb-03)). **Decided 2026-11-06:** the table is authoritative (`booking.holds`, `booking.inventory`; [ADR-036](../../ARCHITECTURE_DECISIONS.md#adr-036)).
 
 ## Event envelope rules (p.24)
 
-- Every event carries a **unique `event_id`** and the **aggregate's version**.
+- Every event carries a **unique `event_id`** and the **aggregate's version**. *(Open: the schema and envelope v1 have no aggregate version yet. See [AMB-54](../10-planning/ambiguities.md#amb-54), which blocks the relay.)*
 - Consumers **drop duplicates** (via `processed_events`) and **ignore stale versions**.
 - A hold that spans two sections publishes its lifecycle **once** on `booking.holds` (one partition, in order) and **one `InventoryChanged` per section** on `booking.inventory`.
 

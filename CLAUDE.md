@@ -12,17 +12,20 @@ Read this before doing anything in the repository. The sections marked **Permane
 
 ---
 
-## Current phase — Phase 2 (Naive baseline), implemented, awaiting review
+## Current phase — Phase 3 (Booking core), planning
 
-Phase 0 was approved on 2026-11-06. Phase 1 (Foundations) passed its gate on 2026-11-06: CI run 42148048247 was green, and PR #1 was merged into `develop` (`1994bc2`). Evidence is in `PROGRESS.md`.
+Phase 0 was approved on 2026-11-06. Phase 1 (Foundations) passed its gate on 2026-11-06 (CI run 42148048247, PR #1). **Phase 2 (Naive baseline) passed its gate on 2026-11-06**: PR #2 merged into `develop` (`6d26dc4`), CI run 42159920841 green on all three jobs, including both `-race` steps. Evidence is in `PROGRESS.md`.
 
-**OQ-7** and **AMB-38 … AMB-43** are decided ([ADR-034](ARCHITECTURE_DECISIONS.md#adr-034), [ADR-035](ARCHITECTURE_DECISIONS.md#adr-035)). The baseline is implemented and measured locally ([plan and results](docs/10-planning/phase-2-naive-baseline.md)). It awaits CI on the pull request and the owner's gate review (P2-14, P2-15). Until Phase 2 is approved:
-1. **No Phase 3 work.** The real booking schema, holds, idempotency and goose migrations for the real tables wait.
-2. The limits still hold outside the baseline: **no business logic**, **no tables** beyond the Compose databases and roles plus the `baseline` schema, **no Kafka topics** (AMB-03).
+Phase 3 is **planning**. The plan is [`docs/10-planning/phase-3-booking-core.md`](docs/10-planning/phase-3-booking-core.md), and its decisions are [ADR-036](ARCHITECTURE_DECISIONS.md#adr-036). Until the owner approves the plan:
+1. **No Phase 3 code**, tests, migrations, configuration or scripts.
+2. After approval, work **one milestone at a time** (M1 → M5; M4 = PDF completeness: tier mode, nearby alternatives, booked-only `seatbits`, `SoldOut`). A milestone is done only when it is implemented, tested, reviewed **and approved**. Do not start the next one before that. There is **no fixed timeline** for Phase 3 (owner, 2026-11-06). Never present dates or durations for it.
+3. The limits still hold outside the approved milestone: no checkout/payment, tickets, waiting room, gRPC, outbox relay or Kafka topic creation. Outbox **rows** use `booking.holds` / `booking.inventory` (AMB-03 ✅).
 
-**Baseline rules** (ADR-034/035): invariants 1, 2, 3, 4 and 7 are deliberately not met **inside the isolated baseline path only** (`internal/booking/baseline`, `internal/gateway/baseline`, build tag `unsafe_baseline`). It uses only the `baseline` schema, is off unless both keys are set (a normal build with the flag refuses to start), sets `READ COMMITTED` explicitly, and must never gain a hidden protection (lock, conditional update, stricter isolation, uniqueness) or an artificial handicap (sleeps, reduced pools, resource caps). Invariants 8, 11, 12 and 14 still apply. No other code may call it. Keep `loadtest/results/` out of commits.
+**Phase 3 rules (ADR-036):** follow the lock-order rules in plan §10 (a transaction may wait only for a lock ranked above every lock it holds, and anything else is taken with `SKIP LOCKED`). Idempotency completion is fenced by the claim generation, so an old claimant can never complete or overwrite a newer claim. Postgres is the only inventory truth: no cache or bitmap may block a valid operation. The Phase-3 identity header is internal only and must never be reachable publicly.
 
-Before phase 3: **OQ-3 / AMB-36** (sqlc), **AMB-10**, **AMB-09**.
+**Baseline rules (ADR-034/035), unchanged:** the Phase 2 baseline (`internal/booking/baseline`, `internal/gateway/baseline`, `cmd/*/baseline_*`, `loadtest/k6/baseline-t1.js`, `loadtest/baseline/`) is **frozen**. Never modify it, never add protections to it, never change its benchmark method or evidence. Invariants 1, 2, 3, 4 and 7 are deliberately not met **inside that path only**. Keep `loadtest/results/` out of commits.
+
+Before M4: [AMB-09](docs/10-planning/ambiguities.md#amb-09) tier data model, [AMB-26](docs/10-planning/ambiguities.md#amb-26) alternatives algorithm, [AMB-52](docs/10-planning/ambiguities.md#amb-52) `SoldOut`. Before M5 cloud runs: OQ-6. Before phase 4: [AMB-13](docs/10-planning/ambiguities.md#amb-13), [AMB-14](docs/10-planning/ambiguities.md#amb-14).
 
 **Local environment:** host ports are non-default (Postgres 15432, Redis 16379, Kafka 29092, services 18080–18086). `-race` runs only in CI on this machine. Local integration tests need `TESTCONTAINERS_RYUK_DISABLED=true` and `-p 1` (testcontainers-go v0.45.0 panics intermittently on Windows when packages run in parallel). CI runs on pull requests and on pushes to `main`, but not on direct pushes to `develop`.
 

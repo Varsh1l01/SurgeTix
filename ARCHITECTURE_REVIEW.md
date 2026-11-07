@@ -33,14 +33,15 @@ The open items are concentrated in **lifecycle edges** (partial cancellation, se
 | 2 | [AMB-02](docs/10-planning/ambiguities.md#amb-02) | M | 0 | Approve the doc layout, FR → phase mapping, and how untested FRs/failures are covered |
 | 3 | [AMB-01](docs/10-planning/ambiguities.md#amb-01) | L | 0 (commit) | Keep the PDF file name `…(2).pdf` or rename it to a stable name before the first commit |
 | 4 | [AMB-34](docs/10-planning/ambiguities.md#amb-34) | M | **1** | ✅ Decided 2026-11-06: single-module monorepo ([ADR-033](ARCHITECTURE_DECISIONS.md#adr-033)) |
-| 5 | [OQ-3](docs/10-planning/open-questions.md) / [AMB-36](docs/10-planning/ambiguities.md#amb-36) | L | **1** | Confirm `sqlc` for CRUD + hand-written `pgx` SQL on hot paths (ADR-024 Proposed) |
+| 5 | [OQ-3](docs/10-planning/open-questions.md) / [AMB-36](docs/10-planning/ambiguities.md#amb-36) | L | **1** | ✅ Decided 2026-11-06: hand-written `pgx` on transactional paths, `sqlc` later for CRUD ([ADR-036](ARCHITECTURE_DECISIONS.md#adr-036)) |
 | 6 | [AMB-20](docs/10-planning/ambiguities.md#amb-20) | M | **1** | Redis Sentinel (single primary) vs Cluster; HA expectations under Compose; kind vs k3d |
 | 7 | [OQ-7](docs/10-planning/open-questions.md) | — | **2** | ✅ Decided 2026-11-06: the same seven components without protections ([ADR-034](ARCHITECTURE_DECISIONS.md#adr-034)) |
 | 7a | [AMB-38](docs/10-planning/ambiguities.md#amb-38), [AMB-41](docs/10-planning/ambiguities.md#amb-41) | **H** | **2** | ✅ Decided 2026-11-06 ([ADR-035](ARCHITECTURE_DECISIONS.md#adr-035)) |
 | 7b | [AMB-39](docs/10-planning/ambiguities.md#amb-39), [AMB-40](docs/10-planning/ambiguities.md#amb-40), [AMB-42](docs/10-planning/ambiguities.md#amb-42), [AMB-43](docs/10-planning/ambiguities.md#amb-43) | M | **2** | ✅ Decided 2026-11-06 ([ADR-035](ARCHITECTURE_DECISIONS.md#adr-035)) |
-| 8 | [AMB-10](docs/10-planning/ambiguities.md#amb-10) | **H** | **3** | Purchase limits: per hold / per user / per payment method; is 4 fixed? |
-| 9 | [AMB-09](docs/10-planning/ambiguities.md#amb-09) | M | 3 | Data model for "price tier" |
-| 10 | [AMB-26](docs/10-planning/ambiguities.md#amb-26), [AMB-27](docs/10-planning/ambiguities.md#amb-27), [AMB-28](docs/10-planning/ambiguities.md#amb-28) | L–M | 3 | Alternatives algorithm; release rules while `PAYMENT_PENDING`; round-trip counting |
+| 8 | [AMB-10](docs/10-planning/ambiguities.md#amb-10) | **H** | **3** | ✅ Decided 2026-11-06: 1–4 per hold, server-side; cumulative caps later ([ADR-036](ARCHITECTURE_DECISIONS.md#adr-036)) |
+| 9 | [AMB-09](docs/10-planning/ambiguities.md#amb-09) | M | 3 | ✅ Decided 2026-11-06: section mode first. ⚠️ Tier mode (FR-7, P0) deferred, phase to be scheduled |
+| 10 | [AMB-26](docs/10-planning/ambiguities.md#amb-26), [AMB-27](docs/10-planning/ambiguities.md#amb-27), [AMB-28](docs/10-planning/ambiguities.md#amb-28) | L–M | 3 | ✅ Decided 2026-11-06. ⚠️ AMB-26 deviates from p.4/p.29 (no alternatives yet) |
+| 10a | [AMB-44](docs/10-planning/ambiguities.md#amb-44) … [AMB-51](docs/10-planning/ambiguities.md#amb-51), [AMB-03](docs/10-planning/ambiguities.md#amb-03) | L–H | **3** | ✅ Decided 2026-11-06 ([ADR-036](ARCHITECTURE_DECISIONS.md#adr-036) + amendment). Tier mode, nearby alternatives and booked-only `seatbits` are in Phase 3 (M4). Open before M4: AMB-09 tier model, AMB-26 algorithm, [AMB-52](docs/10-planning/ambiguities.md#amb-52) `SoldOut`. OQ-6 before M5 cloud runs |
 | 11 | [AMB-03](docs/10-planning/ambiguities.md#amb-03), [AMB-13](docs/10-planning/ambiguities.md#amb-13), [AMB-14](docs/10-planning/ambiguities.md#amb-14), [AMB-18](docs/10-planning/ambiguities.md#amb-18), [AMB-19](docs/10-planning/ambiguities.md#amb-19), [AMB-24](docs/10-planning/ambiguities.md#amb-24) | M | 4 | Topic names; Identity/Catalog schemas; roles; verification email; secrets; Google verification |
 | 12 | [AMB-22](docs/10-planning/ambiguities.md#amb-22), [AMB-29](docs/10-planning/ambiguities.md#amb-29), [OQ-2](docs/10-planning/open-questions.md), [OQ-6](docs/10-planning/open-questions.md) | M | 5 | Pre-sale numbering; one-Redis-call join; PoW difficulty; load-gen VMs/budget |
 | 13 | [AMB-04](docs/10-planning/ambiguities.md#amb-04) | **H** | **6–7** | Missing order/refund state transitions |
@@ -52,7 +53,7 @@ The open items are concentrated in **lifecycle edges** (partial cancellation, se
 | 19 | [OQ-5](docs/10-planning/open-questions.md), [AMB-37](docs/10-planning/ambiguities.md#amb-37) | L | 9 | Hosting; AuthPlatform reference |
 | 20 | [AMB-12](docs/10-planning/ambiguities.md#amb-12) | M | 3–6 (per item) | Numeric parameters and wire formats, approved per phase |
 
-**Totals:** 35 ambiguities open (4 high), 7 approved (AMB-34, AMB-38 … AMB-43), 1 resolved by PDF v2 (AMB-21). 7 PDF open questions, 1 decided (OQ-7). 1 proposed ADR (ADR-024).
+**Totals:** 30 ambiguities open (4 high: AMB-04, AMB-06, AMB-07, AMB-53; incl. the new AMB-52, AMB-53), 22 approved (AMB-03, -09, -10, -26, -27, -28, -34, -36, -38 … -51), 1 resolved by PDF v2 (AMB-21). 7 PDF open questions, 2 decided (OQ-3, OQ-7). 0 proposed ADRs (ADR-024 accepted).
 
 ---
 

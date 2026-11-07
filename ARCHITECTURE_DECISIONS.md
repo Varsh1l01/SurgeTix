@@ -37,7 +37,7 @@ New decisions (e.g. answers to [ambiguities](docs/10-planning/ambiguities.md) or
 | [021](#adr-021) | Six services + one worker; new features land inside existing services | Accepted (PDF) |
 | [022](#adr-022) | Build the naive baseline first; prove the core before splitting | Accepted (PDF) |
 | [023](#adr-023) | FakePay simulator instead of a real provider's test mode | Accepted (PDF) |
-| [024](#adr-024) | `pgx` + `sqlc` (CRUD) + hand-written SQL (hot paths) + `goose` | **Proposed (PDF)** |
+| [024](#adr-024) | `pgx` + `sqlc` (CRUD) + hand-written SQL (hot paths) + `goose` | **Accepted (owner, 2026-11-06)** |
 | [025](#adr-025) | Online-only gate scanning in v1 | Accepted (PDF) |
 | [026](#adr-026) | Admissions fail closed when Redis is unavailable | Accepted (PDF) |
 | [027](#adr-027) | NGINX `proxy_cache` 1 s microcache as the edge (CDN if hosted) | Accepted (PDF) |
@@ -49,6 +49,7 @@ New decisions (e.g. answers to [ambiguities](docs/10-planning/ambiguities.md) or
 | [033](#adr-033) | Single-module Go monorepo; per-service Postgres roles | **Accepted (owner, 2026-11-06)** |
 | [034](#adr-034) | Naive baseline: the same seven components without protections (OQ-7 → Option B) | **Accepted (owner, 2026-11-06)** |
 | [035](#adr-035) | Phase 2 baseline implementation decisions (AMB-38 … AMB-43) | **Accepted (owner, 2026-11-06)** |
+| [036](#adr-036) | Phase 3 booking-core decisions (AMB-09, -10, -26, -27, -28, -36, -44 … -51) | **Accepted (owner, 2026-11-06)**, with flagged PDF deviations |
 
 ---
 
@@ -188,7 +189,7 @@ New decisions (e.g. answers to [ambiguities](docs/10-planning/ambiguities.md) or
 
 <a id="adr-024"></a>
 ## ADR-024 — Postgres access layer
-- **Status:** **Proposed (PDF)**. Awaiting confirmation ([OQ-3](docs/10-planning/open-questions.md), [AMB-36](docs/10-planning/ambiguities.md#amb-36))
+- **Status:** **Accepted (owner, 2026-11-06)**. Resolves [OQ-3](docs/10-planning/open-questions.md) / [AMB-36](docs/10-planning/ambiguities.md#amb-36): hand-written `pgx` for every transactional booking path, `sqlc` later for ordinary CRUD ([ADR-036](#adr-036)).
 - **Proposal:** `pgx` driver; `sqlc` for CRUD; hand-written SQL for the hold, GA and refund paths; `goose` migrations (p.14, p.37).
 
 <a id="adr-025"></a>
@@ -284,3 +285,49 @@ New decisions (e.g. answers to [ambiguities](docs/10-planning/ambiguities.md) or
   - **✅ Approved by the owner, 2026-11-06 (fail closed):** the flag set on a normal build is a configuration error and the process refuses to start. It is never silently ignored. Verified on the real binaries: exit 1 with the guard message.
 - **Findings (measured 2026-11-06, details in the plan §8):** every run oversold (10–20 double-booked seats). Booking's 12-connection pool is the queue (≥ 99.8 % of acquires waited). At 250 buyers the Gateway's 1 s deadline produced 504s, and in one run 6 bookings committed after their client got a 504. The host→Docker-VM round trip measured 1.348 ms vs 0.154 ms inside the VM. The 500-buyer level was not run (machine stability).
 - **Consequences:** Phase 2 evidence is reproducible from `loadtest/` and the committed SQL. Normal builds are unaffected and cannot serve the baseline. Plan and results: [phase-2-naive-baseline](docs/10-planning/phase-2-naive-baseline.md).
+
+<a id="adr-036"></a>
+## ADR-036 — Phase 3 booking-core decisions
+- **Status:** Accepted (owner, 2026-11-06). Resolves [AMB-09](docs/10-planning/ambiguities.md#amb-09), [AMB-10](docs/10-planning/ambiguities.md#amb-10), [AMB-26](docs/10-planning/ambiguities.md#amb-26), [AMB-27](docs/10-planning/ambiguities.md#amb-27), [AMB-28](docs/10-planning/ambiguities.md#amb-28), [AMB-36](docs/10-planning/ambiguities.md#amb-36) (OQ-3), [AMB-44](docs/10-planning/ambiguities.md#amb-44) … [AMB-51](docs/10-planning/ambiguities.md#amb-51). Plan: [phase-3-booking-core](docs/10-planning/phase-3-booking-core.md).
+- **Context:** Phase 3 must prove the booking core correct (gate T1, T7, T8, p.36) before services are split. Several mechanics were unspecified or open. The owner settled them after reviewing the plan.
+- **Decisions (owner) and reasons:**
+
+| Item | Decision | Reason |
+|---|---|---|
+| Data access (AMB-36) | Hand-written `pgx` for transactional paths; `sqlc` later for CRUD | The locking SQL (ordered `FOR UPDATE`, `SKIP LOCKED`, fenced updates, batching) needs exact control; matches the PDF proposal (p.37) |
+| Pricing (AMB-09) | Section mode first; `price_paise` as in the PDF | No tier data model exists; section mode exercises the same algorithm |
+| Limits (AMB-10) | 1–4 per hold, server-side, every mode; cumulative caps later | FR-6. Cumulative caps belong to FR-2 (phase 4) and FR-18 (phase 5) |
+| Conflicts (AMB-26) | `409` lists unavailable seats, no alternatives; no adjacent run → `409` | The algorithm is unspecified; keeps the core minimal; best-available is the "one tap" alternative |
+| Release (AMB-27) | Only `ACTIVE`, unexpired holds | `PAYMENT_PENDING` arrives with checkout (phase 6) |
+| Round trips (AMB-28) | Measure `booking_db` round trips per seat sold (pgx tracer) | Counts real network trips |
+| Entry point (AMB-44) | Internal HTTP + phase-3-only identity header, **never public** | Enables k6 gates without pulling gRPC/JWT/tokens forward |
+| Inventory (AMB-45) | Generated seats; even GA bucket split | Catalog publish is phase 4; reproducible layouts |
+| Gate scale (AMB-46) | Deterministic local tests; full-scale T1/T7 on cloud VMs | The laptop saturates by 250 buyers (phase 2) |
+| Outbox (AMB-47) | Versioned JSON, stable PDF event names, UUID event ids. Inventory events use aggregate `section` (id `event_id:section`); `occurred_at` is RFC 3339 UTC with 6 fractional digits from the transaction's `now()` (owner, 2026-11-06, M1-T6). The aggregate version is open ([AMB-54](docs/10-planning/ambiguities.md#amb-54)) | Readable and evolvable; no `buf` before phase 4 |
+| Idempotency (AMB-48) | 30 s lease; canonical JSON hash; store deterministic `409`s; 24 h retention; **mandatory claim generation**, so an old claimant can never complete or overwrite a newer claim | Crash-safe exactly-once effect (F1, F8) |
+| Pre-filter (AMB-49) | Postgres is the only truth; no cache may block a valid operation; `seatbits` deferred unless required | A stale bitmap could break inline reclaim (F14) |
+| Partial reclaim (AMB-50) | Release the old hold's remaining seats that it **still owns**, in the same transaction; never another hold's seats; no orphans | Otherwise seats stay `HELD` under an `EXPIRED` hold |
+| Migrations (AMB-51) | goose with a session-level advisory lock, verified to stay on one DB session; full schema now | Safe with ≥ 2 replicas (p.8) |
+| Timeline | **No fixed timeline.** Milestone- and gate-driven; one milestone at a time, each approved before the next | Owner direction; consistent with p.37 ("the timeline stretches") |
+
+- **Deviations from, and dependencies on, the PDF (kept visible, not silently applied):**
+  1. **AMB-26:** the PDF promises *"409 with nearby alternatives"* (p.4, p.29). Alternatives are deferred, to be revisited before phase 8.
+  2. **AMB-09:** FR-7 (P0) includes *price tier*. Tier mode is deferred, so FR-7 is incomplete until it is scheduled and built.
+  3. **AMB-48:** fencing needs two **additive** columns on `idempotency_keys` (`claim_generation`, `claimed_at`) that the PDF DDL lacks. **The schema change needs explicit owner confirmation** before M1-T5.
+  4. **AMB-49:** flow 2 step 3 (p.28) describes the `seatbits` pre-filter. The owner must choose between a formal deferral and a BOOKED-only bitmap in a final optional milestone. P3-9 is blocked until then.
+  5. **AMB-50:** under contention, the old hold may stay `ACTIVE` (already expired) for the worker to finish, instead of becoming `EXPIRED` in the reclaim transaction (p.28 wording).
+  6. **AMB-46:** the full-scale gate runs need [OQ-6](docs/10-planning/open-questions.md) (cloud VMs, budget), which is open. The gate is **not** weakened.
+  7. **AMB-47:** topic names need [AMB-03](docs/10-planning/ambiguities.md#amb-03) (open). The outbox task waits on it.
+- **Unchanged:** the full PDF `booking_db` DDL (P3-1); all CLAUDE.md invariants; the Phase 2 baseline (frozen, ADR-034/035).
+- **Consequences:** M1 can start once deviations 3 and 7 are confirmed (AMB-48 schema, AMB-03). The other items affect later milestones or the gate.
+- **Amendment (owner, 2026-11-06), after review of the final plan:**
+  - **AMB-48 schema approved:** migration 00004 adds `claim_generation BIGINT NOT NULL DEFAULT 1` and `claimed_at TIMESTAMPTZ NOT NULL DEFAULT now()` to `idempotency_keys`. This is the **only** deviation from the PDF DDL, and it is additive: every PDF column, the primary key and the `CHECK` are preserved. Generation fencing is mandatory, so an old claimant can never overwrite, complete or delete a newer claim. *(Resolves deviation 3.)*
+  - **AMB-03 approved:** topics `booking.holds` and `booking.inventory` (PDF p.24 table), stable event names, versioned JSON with event ids. *(Resolves deviation 7.)*
+  - **AMB-10 confirmed:** 1–4 applies to all three modes (seats, best-available, GA), server-side, with invalid quantities tested. Cumulative caps deferred.
+  - **AMB-49:** `seatbits` **stays in Phase 3**, sequenced to milestone **M4**, with booked-seats-only semantics. Postgres is authoritative, and stale bitmap data must never block a valid booking or reclamation. *(Deviation 4 becomes "sequenced later", no longer deferred out of Phase 3.)*
+  - **AMB-09:** section pricing first. **Tier mode (FR-7, P0) stays in the Phase 3 completion criteria**, scheduled for **M4**. *(Deviation 2 becomes "sequenced later".)* The tier data model is still to decide before M4.
+  - **AMB-26:** the initial `409` has no suggestions. **Nearby alternatives (p.4, p.29) stay in the Phase 3 completion criteria**, scheduled for **M4**. *(Deviation 1 becomes "sequenced later".)* The algorithm is still to decide before M4.
+  - **OQ-6** must be resolved before the full-scale cloud validation (M5). It does not block M1. *(Deviation 6 unchanged; non-blocking for M1–M4.)*
+  - **`SoldOut`:** the emission condition must be defined before its outbox flow is implemented (M4), tracked as [AMB-52](docs/10-planning/ambiguities.md#amb-52).
+  - **k6 comparison:** direct to Booking for both the baseline and the protected implementation (AMB-44 sub-question).
+  - **Milestones:** M1 seats core → M2 release, best-available (section) and API → M3 GA → **M4 PDF completeness** (tier, alternatives, `seatbits`, `SoldOut`) → M5 load gates and comparison. No fixed timeline. Each milestone is approved before the next. **No P0 requirement is removed or weakened.**

@@ -42,7 +42,7 @@ flowchart TB
     co --> fp
 ```
 
-> The diagram labels the Kafka topics `booking.events` and `checkout.events`, while the topic table (PDF p.24) lists `booking.holds`, `booking.inventory`, `booking.tickets` and `checkout.orders`. This doc set follows the **table**. See [AMB-03](../10-planning/ambiguities.md#amb-03).
+> The diagram labels the Kafka topics `booking.events` and `checkout.events`, while the topic table (PDF p.24) lists `booking.holds`, `booking.inventory`, `booking.tickets` and `checkout.orders`. This doc set follows the **table**. See [AMB-03](../10-planning/ambiguities.md#amb-03). **Decided 2026-11-06:** the table is authoritative (`booking.holds`, `booking.inventory`; [ADR-036](../../ARCHITECTURE_DECISIONS.md#adr-036)).
 
 For the step-by-step path of a single purchase, see [data-flow.md](data-flow.md).
 

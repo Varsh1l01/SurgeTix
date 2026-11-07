@@ -39,7 +39,7 @@ flowchart TD
 
 ## Interaction with inline reclaim
 
-Inline reclaim (in the hold transaction) can take over a seat whose hold has expired before the worker reaches it. It marks the old hold `EXPIRED` in the same transaction. The worker's later batch skips that hold (it is no longer `ACTIVE`/`PAYMENT_PENDING`). **Derived:** for an old **GA** hold, inline reclaim is not described, because GA holds take bucket counts rather than seats, so GA stock only returns via the worker or release.
+Inline reclaim (in the hold transaction) can take over a seat whose hold has expired before the worker reaches it. In the same transaction it returns the old hold's other seats that it can lock (only seats the old hold still owns), and marks the old hold `EXPIRED` **only if that leaves it with no `HELD` seat** ([AMB-50](../10-planning/ambiguities.md#amb-50) ✅, drained-only rule). Otherwise the old hold stays `ACTIVE` with an expired `expires_at`, and the worker's next batch finishes it. A hold already `EXPIRED` is skipped by the worker (it is no longer `ACTIVE`/`PAYMENT_PENDING`). *Implemented in phase 3 M1 (T9 inline reclaim, T11 worker).* **Derived:** for an old **GA** hold, inline reclaim is not described, because GA holds take bucket counts rather than seats, so GA stock only returns via the worker or release.
 
 ## Downstream
 
