@@ -44,7 +44,7 @@ Legend: ☐ to do · ☑ done · ⛔ blocked
 
 ---
 
-## Phase 2 — Naive baseline (Week 2) · Gate: **oversell seen** · current (implemented, awaiting CI and review)
+## Phase 2 — Naive baseline (Week 2) · Gate: **oversell seen** · 🟢 passed 2026-11-06
 
 Plan and results: [phase-2-naive-baseline](docs/10-planning/phase-2-naive-baseline.md) · Decisions: [ADR-034](ARCHITECTURE_DECISIONS.md#adr-034), [ADR-035](ARCHITECTURE_DECISIONS.md#adr-035) · Run: [`loadtest/README.md`](loadtest/README.md).
 
@@ -57,36 +57,46 @@ Plan and results: [phase-2-naive-baseline](docs/10-planning/phase-2-naive-baseli
 | P2-5 | Run, record and archive the baseline oversell evidence | ☑ Plan §5 and §8. Raw output kept locally in `loadtest/results/`, not committed |
 | P2-6 | **Owner:** approve the phase 2 plan and decide AMB-38 … AMB-43 | ☑ 2026-11-06 ([ADR-035](ARCHITECTURE_DECISIONS.md#adr-035)) |
 | P2-7 | Baseline tables, seed and reset command (separate from the real schema) | ☑ goose migrations, schema `baseline`, `sql/reset.sql` |
-| P2-8 | Deterministic concurrency tests on real Postgres (barrier): 2 on 1 seat, *k* on 1 seat, demand ≫ inventory, overlapping multi-seat, sequential control, isolation-level assertion; pass `-race` | ☑ pass locally; `-race` ⏳ CI |
+| P2-8 | Deterministic concurrency tests on real Postgres (barrier): 2 on 1 seat, *k* on 1 seat, demand ≫ inventory, overlapping multi-seat, sequential control, isolation-level assertion; pass `-race` | ☑ pass locally and with `-race` in CI run 42159920841 |
 | P2-9 | Booking HTTP endpoint for the baseline, behind the isolation guard (off by default) | ☑ incl. guard tests in both builds and the `go list -deps` check |
 | P2-10 | Gateway routing to Booking, plus an end-to-end test against Compose | ☑ `internal/gateway/baseline`, `test/e2e`, and the benchmark runs through Compose |
 | P2-11 | Baseline metrics: requests, outcomes, inventory, oversell, latency, errors | ☑ `/metrics` on all services (plan §7) |
 | P2-12 | Benchmark matrix: inventory sizes × arrival rates, repeated runs, environment captured with each result | ☑ 50/100/250 buyers × 3 runs + warm-ups. 500 **not run** (plan §8.4, owner to decide) |
 | P2-13 | Document architecture, method and **measured** results (plan §8); no estimated numbers | ☑ |
-| P2-14 | Regression: Phase 1 checks, Compose health, `/healthz` + `/readyz` for all 7 services, CI green on the PR | ◐ local regression passes (plan §10). CI on the PR ⏳ |
-| P2-15 | **Owner:** gate review: oversell seen + the 9 acceptance criteria | ⏳ after CI |
+| P2-14 | Regression: Phase 1 checks, Compose health, `/healthz` + `/readyz` for all 7 services, CI green on the PR | ☑ local regression and CI run 42159920841 (all three jobs) |
+| P2-15 | **Owner:** gate review: oversell seen + the 9 acceptance criteria | ☑ approved 2026-11-06 |
 
 **Acceptance criteria (owner, 2026-11-06).** Phase 2 is complete only when: (1) the naive flow works end to end · (2) the seven-service architecture is intact · (3) a reproducible concurrency test exists · (4) the oversell is demonstrated and documented with test evidence · (5) the k6 load tests run · (6) latency, throughput and error-rate metrics are recorded · (7) the results are reproducible · (8) the docs contain the architecture, method and measured results · (9) no Phase 1 function is broken. The PDF gate is **oversell seen**.
 
 ---
 
-## Phase 3 — Booking core (Weeks 3–4) · Gate: **T1, T7, T8 pass**
+## Phase 3 — Booking core · Gate: **T1, T7, T8 pass** · current (planning)
 
-| ID | Task | Ref |
-|---|---|---|
-| P3-1 | `booking_db` schema exactly as in [postgres-schema](docs/04-data/postgres-schema.md#booking_db), plus `idempotency_keys`, `outbox`, `processed_events` | ADR-003 |
-| P3-2 | Idempotency claim (completed / in-progress 409 / different-body 422) | FR-12 |
-| P3-3 | `HoldSeats`: all-or-nothing conditional update + inline reclaim of expired holds | FR-6, flow 2a |
-| P3-4 | `HoldBestAvailable`: `SKIP LOCKED LIMIT 40` + adjacency | FR-7; [AMB-09](docs/10-planning/ambiguities.md#amb-09), [AMB-26](docs/10-planning/ambiguities.md#amb-26) |
-| P3-5 | `HoldGA`: 32 buckets, multi-bucket allocation, ordered-lock retry | FR-8 |
-| P3-6 | Hold limits | ⛔ [AMB-10](docs/10-planning/ambiguities.md#amb-10) |
-| P3-7 | Expiry worker (2 s, batches of 1,000, `SKIP LOCKED`, `released_at`) | FR-9, flow 4 |
-| P3-8 | `ReleaseHold` | FR-23; [AMB-27](docs/10-planning/ambiguities.md#amb-27) |
-| P3-9 | `seatbits` bitmap pre-filter (reject-only) | flow 2 step 3 |
-| P3-10 | Outbox writes for HoldCreated / InventoryChanged / HoldExpired / InventoryReturned | ADR-009 |
-| P3-11 | T1, T7, T8 k6 scenarios + audit after every run | test plan |
+Plan: [phase-3-booking-core](docs/10-planning/phase-3-booking-core.md) · Decisions: [ADR-036](ARCHITECTURE_DECISIONS.md#adr-036). **No fixed timeline** (owner, 2026-11-06): one milestone at a time (M1 → M5), each implemented, tested, reviewed and **approved** before the next. **M4 (PDF completeness: tier mode, nearby alternatives, `seatbits`, `SoldOut`) is part of the Phase 3 completion criteria.** **No code until the plan is approved.**
 
----
+| ID | Task | Milestone | Depends on |
+|---|---|---|---|
+| P3-1 | `booking_db` schema exactly as in [postgres-schema](docs/04-data/postgres-schema.md#booking_db), plus `idempotency_keys`, `outbox`, `processed_events`, and the approved additive 00004 (`claim_generation`, `claimed_at`); goose with a session lock ([AMB-51](docs/10-planning/ambiguities.md#amb-51)) | M1 (T1, T2) | [AMB-48](docs/10-planning/ambiguities.md#amb-48) ✅ |
+| P3-2 | Idempotency claim (completed / in-progress 409 / different-body 422), 30 s lease, canonical hash, stored deterministic 409, 24 h retention, **generation fencing** | M1 (T5, T10) | [AMB-48](docs/10-planning/ambiguities.md#amb-48); T5 package approved 2026-11-06; T10 service layer approved 2026-11-06 (I1–I8); same key + different body → **422** confirmed by owner (the package returns `Mismatch`; M2 maps it) |
+| P3-3 | `HoldSeats`: all-or-nothing conditional update + inline reclaim + **partial reclaim** ([AMB-50](docs/10-planning/ambiguities.md#amb-50)) | M1 (T8, T9) | P3-1, P3-2; T8 + T9 approved 2026-11-06 (`lock_timeout` 500 ms) |
+| P3-4 | `HoldBestAvailable`: `SKIP LOCKED LIMIT 40` + adjacency, **section mode**; no run → `409` | M2 | [AMB-09](docs/10-planning/ambiguities.md#amb-09) ✅, [AMB-26](docs/10-planning/ambiguities.md#amb-26) ✅ |
+| P3-5 | `HoldGA`: 32 buckets, multi-bucket allocation, ordered-lock retry | M3 | P3-1; ⛔ [AMB-53](docs/10-planning/ambiguities.md#amb-53) GA price source (hold `amount`) |
+| P3-6 | Hold limits: **1–4 per hold, server-side, all three modes** (seats, best-available, GA); invalid quantities tested; cumulative caps deferred | M1 (T7) | [AMB-10](docs/10-planning/ambiguities.md#amb-10) ✅ (confirmed); T7 validation + canonical form approved 2026-11-06 (wired in T10); id limits 16/24 bytes and plain-integer quantity are Phase 3 constraints, revisit with Catalog layouts (phase 4) |
+| P3-7 | Expiry worker (2 s, batches of 1,000, `SKIP LOCKED`, `released_at`), drained-only `EXPIRED` rule | M1 (T11) seats; M3 GA | P3-3; T11 seats worker and T12 wiring implemented, awaiting review |
+| P3-8 | `ReleaseHold` (only `ACTIVE`, unexpired) | M2 | [AMB-27](docs/10-planning/ambiguities.md#amb-27) ✅ |
+| P3-9 | `seatbits` pre-filter: **booked-seats-only**, never blocks a valid hold or reclaim, skipped when Redis is down; set-after-commit / clear-before-commit hooks for phases 6–7 | **M4** | [AMB-49](docs/10-planning/ambiguities.md#amb-49) ✅ |
+| P3-10 | Outbox writes (HoldCreated / InventoryChanged / HoldReleased / HoldExpired / InventoryReturned) to `booking.holds` / `booking.inventory`, versioned JSON envelope | M1 (T6) | [AMB-47](docs/10-planning/ambiguities.md#amb-47) ✅, [AMB-03](docs/10-planning/ambiguities.md#amb-03) ✅; T6 insert helper approved 2026-11-06 (callers wired in T8+); aggregate version open ([AMB-54](docs/10-planning/ambiguities.md#amb-54)) |
+| P3-11 | T1, T7, T8 k6 scenarios + audit after every run; full-scale T1/T7 on cloud VMs | **M5** | [AMB-46](docs/10-planning/ambiguities.md#amb-46) ✅; [OQ-6](docs/10-planning/open-questions.md) before the cloud runs (does not block M1–M4) |
+| P3-12 | Step 0: record the Phase 2 gate | — | ☑ 2026-11-06 |
+| P3-13 | Generated inventory (seats, even GA split, comparison / fragmented / 1-bucket layouts); bucket range 0–31 enforced in code; production `Load` rejects the benchmark-only one-bucket layout | M1 (T3) | [AMB-45](docs/10-planning/ambiguities.md#amb-45) ✅ |
+| P3-14 | Internal HTTP API, phase-3 identity guard (never public), RFC 9457 errors, metrics, round-trip tracer | M2 | [AMB-44](docs/10-planning/ambiguities.md#amb-44) ✅, [AMB-28](docs/10-planning/ambiguities.md#amb-28) ✅ |
+| P3-15 | Audit SQL for the real schema: 10 read-only checks (double-booked, orphans, mirror, `oversold_ga`, conservation/restore-once, FR-22 seat↔ticket); plan §13.3 | M1 (T4) | P3-1; implemented, awaiting review |
+| P3-16 | Lock-order validation suite (L1–L6) and the baseline-frozen CI check | M1 (T9, T11, T12) | P3-3, P3-7; L1, L2 (and L3 = D4) done in T8/T9; L1 against the real worker in T11; L6 stress and the CI baseline-frozen step in T12 (CI run pending) |
+| P3-17 | Comparison with the frozen Phase 2 baseline (same profile and machine), **k6 direct to Booking for both** | **M5** | P3-11 |
+| P3-18 | Milestone reports, docs, regression, owner gate reviews (M1 … M5) | each | — |
+| P3-19 | **Tier mode** for best-available (FR-7, **P0**) | **M4** | [AMB-09](docs/10-planning/ambiguities.md#amb-09): tier data model before M4 |
+| P3-20 | **Nearby alternatives** in `409` (read-only, never held, stored with the `409`) | **M4** | [AMB-26](docs/10-planning/ambiguities.md#amb-26): algorithm before M4 |
+| P3-21 | **`SoldOut`** on `booking.inventory` (key `event_id`) | **M4** | ⛔ [AMB-52](docs/10-planning/ambiguities.md#amb-52): emission condition |
 
 ## Phase 4 — Services and gRPC (Week 5) · Gate: **e2e hold works**
 
@@ -96,7 +106,7 @@ Plan and results: [phase-2-naive-baseline](docs/10-planning/phase-2-naive-baseli
 | P4-2 | Identity: sign-up/login/refresh/verify (bcrypt), Google OAuth PKCE, RS256, JWKS | FR-1; [AMB-13](docs/10-planning/ambiguities.md#amb-13), [AMB-14](docs/10-planning/ambiguities.md#amb-14), [AMB-18](docs/10-planning/ambiguities.md#amb-18), [AMB-24](docs/10-planning/ambiguities.md#amb-24) |
 | P4-3 | Catalog: events, venues, layouts, `PublishSale`, seat-map snapshots | FR-2, FR-3; [AMB-13](docs/10-planning/ambiguities.md#amb-13) |
 | P4-4 | Gateway: routing REST → gRPC, JWT (cached JWKS), rate limits, request IDs, 1 s deadline | ADR-028 |
-| P4-5 | Outbox relay → Kafka (`acks=all`) | ADR-009; [AMB-03](docs/10-planning/ambiguities.md#amb-03) |
+| P4-5 | Outbox relay → Kafka (`acks=all`) | ADR-009; [AMB-03](docs/10-planning/ambiguities.md#amb-03); ⛔ [AMB-54](docs/10-planning/ambiguities.md#amb-54) aggregate version |
 | P4-6 | E2E test: sign in → (temporary admission bypass?) → hold | gate. How a hold is reached before the waiting room exists needs a decision |
 
 ---

@@ -2,7 +2,7 @@
 
 *Source: PDF p.36 (build phase 2: "check-then-book; k6 baseline runs", gate "oversell seen"), p.35–36 (T1, T6), p.34 (one comparison for every claim), p.27 (gateway deadline), p.10 (load scale), p.15 (testing and load tooling), p.37 (OQ-7). Owner decisions [ADR-034](../../ARCHITECTURE_DECISIONS.md#adr-034) and [ADR-035](../../ARCHITECTURE_DECISIONS.md#adr-035) (2026-11-06).*
 
-**Status:** 🟡 **Implemented and measured locally, awaiting CI on the pull request and owner review.** The gate (*oversell seen*) is met by deterministic test evidence (§5) and by every benchmark run (§8). The phase is complete only after CI passes on the PR and the owner approves it.
+**Status:** 🟢 **Complete. Gate passed 2026-11-06** (PR #2 merged into `develop`, CI run [42159920841](https://github.com/Varsh1l01/SurgeTix/actions/runs/42159920841) green on all three jobs, including both `-race` steps). The gate (*oversell seen*) is met by deterministic test evidence (§5) and by every benchmark run (§8). **The baseline is frozen** for future comparisons ([ADR-034](../../ARCHITECTURE_DECISIONS.md#adr-034)).
 
 > ⚠️ The baseline **deliberately oversells**. It is for testing and benchmarking only and is never a booking flow. How to build and run it: [`loadtest/README.md`](../../loadtest/README.md).
 
@@ -35,7 +35,7 @@ All seven services still build and run. Only Booking and Gateway gained code, an
 | 6 | Latency, throughput and error rate recorded | ✅ §8 |
 | 7 | Results reproducible | ✅ for correctness and outcome counts. ⚠️ Throughput and latency vary a lot between repetitions on this laptop (§8.3) |
 | 8 | Docs contain the architecture, method and measured results | ✅ This document, `loadtest/README.md`, ADR-034/035 |
-| 9 | No Phase 1 function broken | ✅ Phase 1 tests and runtime checks pass locally (§10). CI on the PR is pending |
+| 9 | No Phase 1 function broken | ✅ Phase 1 tests and runtime checks pass locally (§10) and in CI run 42159920841 |
 
 ## 3. Architecture of the baseline path
 
@@ -266,8 +266,8 @@ All six are ✅ decided on 2026-11-06 ([ADR-035](../../ARCHITECTURE_DECISIONS.md
 | 8 | k6 scripts + reset → run → audit | ✅ `loadtest/` | P2-3 |
 | 9 | Benchmark matrix | ✅ §8 (50/100/250 × 3). 500 not run (§8.4) | P2-5, P2-12 |
 | 10 | Documentation of method and results | ✅ this document | P2-13 |
-| 11 | Regression | ✅ locally (below). ⏳ CI on the PR | P2-14 |
-| 12 | Owner gate review | ⏳ | P2-15 |
+| 11 | Regression | ✅ locally (below) and CI run 42159920841 | P2-14 |
+| 12 | Owner gate review | ✅ approved 2026-11-06 | P2-15 |
 
 **Local regression run on 2026-11-06, final tree, Windows 11, Go 1.27.3:** `gofmt -l .` empty · `go mod tidy` no change · `go vet` clean with tags `""`, `integration`, `unsafe_baseline`, `integration,unsafe_baseline` · unit tests pass in both builds · integration tests pass in both tag sets with `-p 1` · both builds compile · the 7 normal binaries do not contain `/v1/baseline/` and the 2 tagged ones do · `docker compose up --wait`: all 3 healthy · all 7 normal binaries answer `/healthz` and `/readyz` 200 and serve `/metrics` · the baseline route answers 404 on normal builds · normal Booking and Gateway with the flag set exit 1 with the guard message · tagged Booking without the flag answers 404 and logs "compiled in but disabled".
 

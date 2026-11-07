@@ -17,7 +17,7 @@
 | Requirement | Notes |
 |---|---|
 | **≥ 2 replicas per stateless service** | No single point of failure in the request path |
-| **Liveness/readiness probes** | Readiness should reflect dependency health (derived) |
+| **Liveness/readiness probes** | Readiness should reflect dependency health (derived). Booking (phase 3 M1-T12): migrations run at start-up before the HTTP server listens, and `/readyz` also checks that the schema is at the binary's embedded migration version. Its runtime pool sets `idle_in_transaction_session_timeout` = 5 s (abandoned transactions release their locks); migrations and the plain pool do not |
 | **HPA** | Scale signals per service from p.15–16: request rate (Gateway), queue joins (Waiting Room), admitted rate (Booking), orders (Checkout), seat-map reads (Catalog), Kafka lag (Notifier). Metric wiring is unspecified |
 | **PodDisruptionBudgets** | Keep ≥ 1 replica during voluntary disruptions |
 | **Graceful shutdown** | Drain in-flight requests; release leases; stop claiming outbox/expiry/saga batches |
